@@ -1,6 +1,7 @@
 {
   "name": "Cake 3D Pro",
   "short_name": "Cake3D",
+  "id": "cake-3d-configurator/",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
