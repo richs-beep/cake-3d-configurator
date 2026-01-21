@@ -588,24 +588,29 @@ function onWindowResize() {
     camera.aspect = el.clientWidth / el.clientHeight; camera.updateProjectionMatrix(); renderer.setSize(el.clientWidth, el.clientHeight);
 }
 
-function animate() { 
-    requestAnimationFrame(animate); 
+function animate() {
+    requestAnimationFrame(animate);
+
+    // --- ЛОГИКА "РЕЛЬС" (Блокировка горизонтального сдвига) ---
+    if (viewMode === 'single') {
+        // Жестко привязываем цель камеры к центру активного торта по X и Z
+        const lockedX = (activeCakeId === 0) ? -220 : 220;
+        
+        controls.target.x = lockedX; // Запрещаем сдвиг влево/вправо
+        controls.target.z = 0;       // Запрещаем сдвиг вперед/назад
+        
+        // А вот Y (высоту) не трогаем — пусть OrbitControls меняет её,
+        // когда вы двигаете двумя пальцами.
+    }
+
+    // Ограничители высоты (чтобы не улететь в подвал или космос)
+    if (controls.target.y < 0) controls.target.y = 0;
+    if (controls.target.y > 1000) controls.target.y = 1000;
+
+    controls.update();
     
-    // МЫ УБРАЛИ ЭТИ СТРОКИ:
-    // let targetX = ...
-    // controls.target.x = targetX;
-    // controls.target.z = 0;
-    
-    // Оставляем только ограничения по высоте (Y)
-    // -1000 позволяет опуститься глубоко под стол (чтобы поднять торт к верху экрана)
-    if(controls.target.y < -1000) controls.target.y = -1000;
-    
-    // 1500 не дает улететь слишком высоко в небо
-    if(controls.target.y > 1500) controls.target.y = 1500;
-    
-    controls.update(); 
     if (rulerMode) updateMeasureLabel();
-    renderer.render(scene, camera); 
+    renderer.render(scene, camera);
 }
 
 /* --- 2. SCENE LOGIC --- */
@@ -1531,8 +1536,44 @@ function updateTexProp(key, val) {
     rebuildScene(); recordHistory(); 
 }
 
-function switchCake(id) { if (id === 'both') { viewMode = 'both'; activeCakeId = 0; document.getElementById('compare-overlay').style.display = 'block'; renderCompareTable(); } else { viewMode = 'single'; activeCakeId = id; document.getElementById('compare-overlay').style.display = 'none'; } document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active')); if(id === 'both') document.getElementById('seg-both').classList.add('active'); else document.getElementById(`seg-${id}`).classList.add('active'); updateCameraTarget(); rebuildScene(); closeSheet(); }
-function updateCameraTarget() { let targetX = (viewMode === 'single') ? ((activeCakeId === 0) ? -220 : 220) : 0; controls.target.set(targetX, controls.target.y, 0); controls.update(); }
+function switchCake(id) {
+    // ... (код переключения viewMode как и был) ...
+    if (id === 'both') { 
+        viewMode = 'both'; activeCakeId = 0; 
+        document.getElementById('compare-overlay').style.display = 'block'; renderCompareTable(); 
+    } else { 
+        viewMode = 'single'; activeCakeId = id; 
+        document.getElementById('compare-overlay').style.display = 'none'; 
+    } 
+    
+    document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active')); 
+    if(id === 'both') document.getElementById('seg-both').classList.add('active'); 
+    else document.getElementById(`seg-${id}`).classList.add('active'); 
+    
+    // ВЫЗЫВАЕМ ОБНОВЛЕНИЕ КАМЕРЫ (Чтобы выставить высоту нового торта)
+    updateCameraTarget(); 
+    
+    rebuildScene(); 
+    closeSheet(); 
+}
+function updateCameraTarget() {
+    // Просто считаем высоту торта, чтобы камера смотрела в центр
+    let totalHeight = 0;
+    const currentTiers = cakes[activeCakeId];
+    if (currentTiers && currentTiers.length > 0) {
+        currentTiers.forEach(t => {
+            const h = (t.shape === 'sphere') ? t.d : (t.h || 0);
+            totalHeight += h;
+        });
+    }
+    // Выставляем высоту прицела на середину торта
+    const targetY = (totalHeight > 0) ? totalHeight / 2 : 100;
+    
+    controls.target.y = targetY;
+    // X и Z выставит функция animate() в следующем кадре
+    
+    controls.update();
+}
 function setCamView(type) { let tx = 0; if (viewMode === 'single') tx = (activeCakeId === 0) ? -220 : 220; controls.target.set(tx, 100, 0); if (type === 'front') camera.position.set(tx, 100, 600); if (type === 'left') camera.position.set(tx - 600, 100, 0); if (type === 'right') camera.position.set(tx + 600, 100, 0); if (type === 'top') camera.position.set(tx, 800, 0); if (type === 'reset') camera.position.set(tx + 400, 300, 400); controls.update(); }
 
 // Глобальный таймер для долгого нажатия
