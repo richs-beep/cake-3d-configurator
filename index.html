@@ -433,7 +433,6 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--primary); 
 <script>
 /* --- 1. CORE & INIT --- */
 let scene, camera, renderer, controls, group, raycaster, mouse;
-let tierTimer = null; // Таймер для долгого нажатия на ярус
 let tapStartX = 0, tapStartY = 0; // Запоминаем место касания
 // --- ПЕРЕМЕННЫЕ ДЛЯ МАГНИТА ---
 let snapLines = { x: null, z: null, y: null }; // Храним линии
@@ -990,8 +989,15 @@ function openMenu(menuName, scrollTarget) {
              });
         }
     } else if (menuName === 'structure_edit') {
-        if(ui.selTier === null) { openMenu('structure'); return; }
-        const t = getActiveTiers()[ui.selTier];
+        const tiers = getActiveTiers();
+        
+        // Если ярус не выбран ИЛИ индекс сломался -> выкидываем в главное меню
+        if (ui.selTier === null || !tiers[ui.selTier]) {
+            openMenu('structure'); // Переключаем на общий список
+            return; // Останавливаем выполнение, чтобы не было ошибки
+        }
+        
+        const t = tiers[ui.selTier];
         title.innerHTML = `Настройка Яруса ${ui.selTier+1}`;
         
         const dimStr = (t.shape==='box') ? `${t.d/10}x${t.d/10}` : (t.shape==='parallelepiped' ? `${t.w/10}x${t.dep/10}` : `Ø${t.d/10}`);
@@ -1675,8 +1681,28 @@ function onPointerDown(e) {
     raycaster.setFromCamera(mouse, camera); 
     const hits = raycaster.intersectObjects(group.children, true); 
     
-    if (hits.length > 0) { 
-        let targetObj = hits.find(h => h.object.userData.type || (h.object.parent && h.object.parent.userData.type));
+    if (hits.length > 0) {
+        // --- УМНЫЙ ПОИСК ЦЕЛИ ---
+        // 1. Берем самое первое, во что попали (обычно это то, что ближе всего)
+        const firstHit = hits[0];
+        
+        // 2. Проверяем: а нет ли "Декора" на расстоянии до 5 единиц от первого попадания?
+        // Это нужно, так как стикеры лежат вплотную к ярусу, и иногда Raycaster "видит" ярус раньше.
+        // Мы даем приоритет декору.
+        let targetHit = hits.find(h => 
+            h.distance < firstHit.distance + 5 && 
+            (
+                (h.object.userData.type === 'decor') || 
+                (h.object.parent && h.object.parent.userData.type === 'decor')
+            )
+        );
+
+        // 3. Если декор не нашли, ищем любой объект с типом (значит, это ярус)
+        if (!targetHit) {
+            targetHit = hits.find(h => h.object.userData.type || (h.object.parent && h.object.parent.userData.type));
+        }
+
+        let targetObj = targetHit; // Передаем найденное дальше
         
         if(targetObj) { 
             let obj = targetObj.object;
@@ -1825,54 +1851,30 @@ function onPointerDown(e) {
                 window.addEventListener('pointermove', onPointerMove);
                 window.addEventListener('pointerup', onPointerUp);
             } else {
-                // === ЛОГИКА ДОЛГОГО НАЖАТИЯ НА ЯРУС ===
-                ui.selDecorIdx = null;
-                rebuildScene(); 
-
-                if (tierTimer) clearTimeout(tierTimer);
-
-                // 1. Запускаем таймер
-                tierTimer = setTimeout(() => {
-                    if (ui.activeMenu === 'color') openMenu('color');
-                    else if (ui.activeMenu === 'decor') openMenu('decor');
-                    else openMenu('structure_edit');
-                    
-                    if (navigator.vibrate) navigator.vibrate(50);
-                }, 800);
-
-                // 2. ВАЖНО: Включаем слежку за движением и поднятием пальца!
-                // Без этого onPointerMove не узнает, что вы двигаете палец
-                window.addEventListener('pointermove', onPointerMove);
-                window.addEventListener('pointerup', onPointerUp);
+                // === ПРОСТАЯ ЛОГИКА ДЛЯ ЯРУСОВ ===
+                // 1. Снимаем выделение с декора
+                ui.selDecorIdx = null; 
+                
+                // 2. Запоминаем, какой ярус выбран
+                ui.selTier = ud.tIdx;
+                
+                // 3. Если меню "Структура" (Форма) уже открыто — обновляем его, чтобы показать настройки этого яруса
+                // Если открыто что-то другое (или ничего) — НЕ открываем меню сами.
+                if (ui.activeMenu === 'structure_edit') {
+                     openMenu('structure_edit');
+                } else {
+                     // Просто рисуем розовую обводку
+                     rebuildScene();
+                }
             }
             rebuildScene(); 
         } 
-    } else {
-               // === ЛОГИКА ДОЛГОГО НАЖАТИЯ ===
-               ui.selDecorIdx = null;
-               
-               // Сбрасываем старый таймер, если был
-               if (tierTimer) clearTimeout(tierTimer);
-
-               // Запускаем таймер на 800 мс (0.8 сек)
-               tierTimer = setTimeout(() => {
-                   // Если палец всё еще на месте — открываем меню
-                   if (ui.activeMenu === 'color') openMenu('color');
-                   else if (ui.activeMenu === 'decor') openMenu('decor');
-                   else openMenu('structure_edit');
-                   
-                   // Вибрация, чтобы пользователь понял, что меню открылось
-                   if (navigator.vibrate) navigator.vibrate(50);
-               }, 800); 
-           }
+    } 
 }
 
 function onPointerUp() {
     // 1. ГЛАВНОЕ ИСПРАВЛЕНИЕ: Отменяем таймер яруса, если палец поднят
-    if (tierTimer) {
-        clearTimeout(tierTimer); // Останавливаем таймер
-        tierTimer = null;        // Обнуляем переменную
-    }
+    
 
     // 2. Отменяем таймер замка (декор)
     if (longPressTimer) {
@@ -1904,13 +1906,8 @@ function onPointerUp() {
 }
 
 function onPointerMove(e) {
-  if (tierTimer) {
-        const dist = Math.hypot(e.clientX - tapStartX, e.clientY - tapStartY);
-        if (dist > 10) { // Если палец сдвинулся > 10px (начали крутить торт)
-            clearTimeout(tierTimer); // Отменяем открытие меню
-            tierTimer = null;
-        }
-    }
+  
+    
     // Если драг не активен
     if (!isDragging || !dragData || !dragData.targets || dragData.targets.length === 0) return;
 
