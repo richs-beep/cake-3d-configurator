@@ -804,7 +804,13 @@ function rebuildScene() {
               tex = texLoader.load(s.url);
           }
          
-          const matParams = { map: tex, transparent: true, alphaTest: 0.4 };
+          // Добавляем чтение цвета tintColor (или белый по умолчанию)
+const matParams = { 
+    map: tex, 
+    transparent: true, 
+    alphaTest: 0.4,
+    color: s.tintColor || '#ffffff' 
+};
           if (s.placement === 'volume') {
               // --- ОБЪЕМНЫЕ СТАНДАРТНЫЕ ФИГУРЫ ---
               let vGeo;
@@ -976,7 +982,9 @@ function openMenu(menuName, scrollTarget) {
     const title = document.getElementById('sheet-title');
     let html = '';
   
-    
+    if (menuName === 'structure' && ui.selTier !== null) {
+        menuName = 'structure_edit';
+    }
     if (menuName === 'structure') {
         title.innerHTML = '🏗 Структура';
         html += `<button class="btn-full" onclick="actionAddTier()">+ Добавить Ярус</button>`;
@@ -1153,31 +1161,38 @@ function openMenu(menuName, scrollTarget) {
 html += `<div id="decor-list-box" style="max-height:150px; overflow-y:auto; background:#fff; border:1px solid #ddd; border-radius:8px; margin-bottom:12px;">`;
             if(t.decor.length === 0) html += `<div style="padding:8px; color:#999; font-size:11px">Нет элементов</div>`;
             
+            // ... (предыдущий код: <div id="decor-list-box" ... )
+
             t.decor.forEach((d, i) => {
-                let typeName = '';
-                if (d.placement === 'volume' || d.placement === 'topper') {
-                    const names = { sphere: '⚪ Шар', cube: '📦 Куб', cylinder: '🕯 Свеча' };
-                    typeName = names[d.shape] || '3D Фигура';
-                } else if (d.placement === 'topper') {
-                    typeName = '🚩 Топпер';
-                } else if (d.placement === 'top') {
-                    typeName = '🖼 Картинка (Верх)';
-                } else {
-                    typeName = '🖼 Стикер (Бок)';
+                // 1. ОПРЕДЕЛЯЕМ ИМЯ
+                let displayName = d.customName; // Сначала ищем ваше личное название
+                
+                if (!displayName) {
+                    // Если вы ничего не вписали, генерируем стандартное
+                    if (d.isText) {
+                        displayName = '"' + d.textContent + '"';
+                    } else if (d.placement === 'volume' || d.placement === 'topper') {
+                        const names = { sphere: '⚪ Шар', cube: '📦 Куб', cylinder: '🕯 Свеча' };
+                        displayName = names[d.shape] || '3D Фигура';
+                    } else if (d.placement === 'topper') {
+                        displayName = '🚩 Топпер';
+                    } else if (d.placement === 'top') {
+                        displayName = '🖼 Картинка (Верх)';
+                    } else {
+                        displayName = '🖼 Стикер (Бок)';
+                    }
                 }
                 
-                // Логика подсветки: или это текущий одиночный, или он в списке мульти-выбора
+                // Логика подсветки (оставляем как было)
                 const isSelected = isMultiSelect ? selectedDecors.includes(i) : (ui.selDecorIdx === i);
                 const bg = isSelected ? '#fce7f3' : '#fff';
                 const lockIcon = d.locked ? '🔒 ' : '';
                 const checkIcon = isMultiSelect ? (isSelected ? '☑️ ' : '⬜ ') : '';
-
-                // В режиме мульти-выбора клик переключает галочку, иначе выбирает объект
                 const clickAction = isMultiSelect ? `toggleDecorSelection(${i})` : `selectDecor(${i})`;
 
-                // ДОБАВИЛИ ID: decor-item-${i}
-html += `<div id="decor-item-${i}" onclick="${clickAction}" style="padding:8px; border-bottom:1px solid #eee; background:${bg}; font-size:12px; display:flex; justify-content:space-between; cursor:pointer; align-items:center">
-                            <span>${checkIcon}${i+1}. ${lockIcon}${d.isText ? '"'+d.textContent+'"' : typeName}</span>
+                // Вывод в HTML (используем displayName)
+                html += `<div id="decor-item-${i}" onclick="${clickAction}" style="padding:8px; border-bottom:1px solid #eee; background:${bg}; font-size:12px; display:flex; justify-content:space-between; cursor:pointer; align-items:center">
+                            <span>${checkIcon}${i+1}. ${lockIcon}${displayName}</span>
                             ${!isMultiSelect ? `<span style="color:red; padding:0 8px" onclick="event.stopPropagation(); removeDecor(${i})">✕</span>` : ''}
                          </div>`;
             });
@@ -1257,6 +1272,17 @@ html += `<div id="decor-item-${i}" onclick="${clickAction}" style="padding:8px; 
 
                     html += `<div class="control-label">Редактирование</div>
                              <div style="background:#f8f9fa; padding:10px; border-radius:12px; border:1px solid #eee">`;
+                             html += `<div class="control-label">Редактирование</div>
+                             <div style="background:#f8f9fa; padding:10px; border-radius:12px; border:1px solid #eee">
+                             
+                             <div style="margin-bottom:12px">
+                                <label style="font-size:10px; font-weight:700; color:#888; text-transform:uppercase; margin-bottom:4px; display:block">Название</label>
+                                <input type="text" value="${d.customName || ''}" placeholder="Например: Красный бант" 
+                                       class="btn-sec" style="width:100%; font-size:14px; padding:8px; height:auto; min-height:36px" 
+                                       onchange="renameDecor(this.value)">
+                             </div>`;
+                             
+                    // ... (дальше идет Галочка закрепления и всё остальное) ...
                     
                     // Галочка закрепления (Исправленная)
                     html += `<div onclick="toggleDecorLock(!${d.locked})" style="margin-bottom:12px; background:#fff; padding:8px; border-radius:8px; border:1px solid ${d.locked ? '#ec4899' : '#ddd'}; display:flex; align-items:center; justify-content:space-between; cursor:pointer">
@@ -1268,6 +1294,25 @@ html += `<div id="decor-item-${i}" onclick="${clickAction}" style="padding:8px; 
                              </div>
                              ${d.locked ? '<div style="font-size:10px; color:#ec4899; margin-bottom:10px; text-align:center">ℹ️ Чтобы выбрать закрепленный объект, удерживайте на нем палец 1 секунду.</div>' : ''}`;
 
+                    // --- ТОНАЛЬНОСТЬ КАРТИНКИ ---
+                    // Показываем только для картинок (не для текста и не для 3D фигур, у фигур свой цвет)
+                    if (!d.isText && d.placement !== 'volume') {
+                        html += `<div class="control-group" style="margin-top:12px; border-bottom:1px solid #eee; padding-bottom:12px;">
+                                    <label class="control-label" style="display:flex; justify-content:space-between;">
+                                        <span>🎨 Тональность (Фильтр)</span>
+                                        <span style="font-weight:normal; color:#888; font-size:10px;">Белый = Оригинал</span>
+                                    </label>
+                                    <div style="display:flex; gap:10px; align-items:center;">
+                                        <input type="color" value="${d.tintColor || '#ffffff'}" 
+                                               style="height:40px; width:60px; border:none; padding:0; background:none;" 
+                                               oninput="updateDecorTint(this.value)">
+                                               
+                                        <button class="btn-sec" onclick="updateDecorTint('#ffffff')" style="padding:8px 12px; font-size:12px;">
+                                            Сбросить (Белый)
+                                        </button>
+                                    </div>
+                                 </div>`;
+                    }
                     // Текст
                     if (d.isText) {
                         html += `<div style="margin-bottom:16px; border-bottom:1px solid #ddd; padding-bottom:12px;">
@@ -1801,6 +1846,7 @@ function onPointerDown(e) {
         closeSheet(); 
     }
 }
+
 function onPointerUp() {
     // 1. ГЛАВНОЕ ИСПРАВЛЕНИЕ: Отменяем таймер яруса, если палец поднят
     
@@ -2219,7 +2265,9 @@ function createDecorItem(url, isText, textContent) {
         isText: isText || false,
         textContent: textContent || '',
         font: 'Inter',
-        color: '#000000'
+        color: '#000000',
+        
+        tintColor: '#ffffff' // <--- ДОБАВИЛИ ВОТ ЭТО
     };
     
     t.decor.push(item);
@@ -3411,6 +3459,24 @@ function updateSnapLines(visibleX, visibleZ, pos) {
     } else {
         snapLines.z.visible = false;
     }
+}
+function updateDecorTint(val) {
+    if(ui.selTier === null || ui.selDecorIdx === null) return;
+    const d = getActiveTiers()[ui.selTier].decor[ui.selDecorIdx];
+    
+    d.tintColor = val;
+    rebuildScene();
+    // Мы не вызываем recordHistory при каждом движении ползунка цвета, чтобы не забивать память,
+    // но можно добавить, если хотите.
+}
+function renameDecor(val) {
+    if(ui.selTier === null || ui.selDecorIdx === null) return;
+    
+    const d = getActiveTiers()[ui.selTier].decor[ui.selDecorIdx];
+    d.customName = val; // Сохраняем имя
+    
+    openMenu('decor'); // Обновляем меню, чтобы новое имя появилось в списке
+    recordHistory();
 }
 
 init();
