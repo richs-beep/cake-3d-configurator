@@ -232,7 +232,7 @@ input[type=number] { -moz-appearance: textfield; }
 
 /* CONTROLS */
 .control-group { margin-bottom: 16px; }
-.control-label { font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; margin-bottom: 6px; letter-spacing: 0.5px; }
+.control-label { font-size: 11px; text-transform: uppercase; color: #888; font-weight: 700; margin-bottom: 6px; letter-spacing: px; }
 .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .btn-full { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: 600; font-size: 14px; margin-bottom: 8px; }
 .btn-sec { background: #fff; border: 1px solid #ddd; color: #333; padding: 10px; border-radius: 10px; font-weight: 600; width: 100%; text-align: left;}
@@ -342,7 +342,7 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--primary); 
     
     /* Белая обводка для контраста, если фон торта темный */
     border: 2px solid #ffffff; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5); /* Глубокая тень */
+    box-shadow: 0 4px 15px rgba(0,0,0,); /* Глубокая тень */
     
     pointer-events: none; /* Пропускает клики */
     transform: translate(-50%, -50%);
@@ -2255,7 +2255,7 @@ function createDecorItem(url, isText, textContent) {
     const t = getActiveTiers()[ui.selTier];
     
     let initX = 0, initY = 0, initZ = 0;
-    if (tempDecorType === 'side') { initY = 0.5; initX = 0; } 
+    if (tempDecorType === 'side') { initY = 0.5; initX = 0.5; } 
 
     const item = { 
         url: url, placement: tempDecorType, 
