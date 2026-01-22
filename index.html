@@ -1623,73 +1623,60 @@ function setCamView(type) { let tx = 0; if (viewMode === 'single') tx = (activeC
 let longPressTimer = null;
 let longPressMoveHandler = null; // <--- ДОБАВИТЬ ЭТУ СТРОКУ
 
-function onPointerDown(e) { 
+function onPointerDown(e) {
     if(e.target.closest('.bottom-sheet') || e.target.closest('.toolbar') || e.target.closest('.top-bar')) return;
+
     // 1. ЗАПОМИНАЕМ МЕСТО НАЖАТИЯ
     tapStartX = e.clientX;
     tapStartY = e.clientY;
-    // --- ЛОГИКА ЛИНЕЙКИ (ВСТАВИТЬ СЮДА) ---
+
+    // --- ЛОГИКА ЛИНЕЙКИ ---
     if (rulerMode) {
-        const rect = renderer.domElement.getBoundingClientRect(); 
-        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1; 
-        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1; 
-        
-        raycaster.setFromCamera(mouse, camera); 
-        // Ищем пересечение со всем, что есть в сцене (группа)
+        const rect = renderer.domElement.getBoundingClientRect();
+        mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
         const hits = raycaster.intersectObjects(group.children, true);
-        
         if (hits.length > 0) {
-            const point = hits[0].point; // Точка клика в 3D
-            
+            const point = hits[0].point;
             if (rulerStep === 0) {
-                // Первый клик
                 clearRulerVisuals();
                 rulerStart.copy(point);
-                rulerMarkerA = createDot(point, 0x00ff00); // Зеленая точка старта
+                rulerMarkerA = createDot(point, 0x00ff00);
                 rulerStep = 1;
-                
-                // Виброотклик
                 if (navigator.vibrate) navigator.vibrate(50);
             } else {
-                // Второй клик
-                rulerMarkerB = createDot(point, 0xff0000); // Красная точка конца
+                rulerMarkerB = createDot(point, 0xff0000);
                 rulerLine = drawLine(rulerStart, point);
-                
-                // Считаем расстояние
-                const dist = rulerStart.distanceTo(point); // В условных единицах (мм)
-                
-                // Показываем плашку
+                const dist = rulerStart.distanceTo(point);
                 const label = document.getElementById('measure-label');
-                label.innerText = Math.round(dist) + ' мм'; // или (dist/10).toFixed(1) + ' см'
+                label.innerText = Math.round(dist) + ' мм';
                 label.style.display = 'block';
                 updateMeasureLabel();
-                
-                // Виброотклик
                 if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-                
-                rulerStep = 0; // Сброс, следующий клик начнет новую линию
+                rulerStep = 0;
             }
             renderer.render(scene, camera);
         }
-        return; // ПРЕРЫВАЕМ ФУНКЦИЮ, чтобы не сработало выделение декора
+        return;
     }
-    
-    const rect = renderer.domElement.getBoundingClientRect(); 
-    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1; 
-    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1; 
-    
-    raycaster.setFromCamera(mouse, camera); 
-    const hits = raycaster.intersectObjects(group.children, true); 
-    
+
+    // --- ОБЫЧНЫЙ РЕЖИМ (ПОИСК ОБЪЕКТА) ---
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const hits = raycaster.intersectObjects(group.children, true);
+
+    let targetObj = null;
+
+    // 2. ЕСЛИ ВО ЧТО-ТО ПОПАЛИ - ПЫТАЕМСЯ ПОНЯТЬ, ЧТО ЭТО
     if (hits.length > 0) {
-        // --- УМНЫЙ ПОИСК ЦЕЛИ ---
-        // 1. Берем самое первое, во что попали (обычно это то, что ближе всего)
         const firstHit = hits[0];
         
-        // 2. Проверяем: а нет ли "Декора" на расстоянии до 5 единиц от первого попадания?
-        // Это нужно, так как стикеры лежат вплотную к ярусу, и иногда Raycaster "видит" ярус раньше.
-        // Мы даем приоритет декору.
-        let targetHit = hits.find(h => 
+        // Умный поиск: приоритет Декору, если он рядом (в радиусе 5 единиц)
+        let foundHit = hits.find(h => 
             h.distance < firstHit.distance + 5 && 
             (
                 (h.object.userData.type === 'decor') || 
@@ -1697,181 +1684,123 @@ function onPointerDown(e) {
             )
         );
 
-        // 3. Если декор не нашли, ищем любой объект с типом (значит, это ярус)
-        if (!targetHit) {
-            targetHit = hits.find(h => h.object.userData.type || (h.object.parent && h.object.parent.userData.type));
+        // Если декора рядом нет, ищем Ярус
+        if (!foundHit) {
+            foundHit = hits.find(h => h.object.userData.type || (h.object.parent && h.object.parent.userData.type));
         }
 
-        let targetObj = targetHit; // Передаем найденное дальше
-        
-        if(targetObj) { 
-            let obj = targetObj.object;
+        // Извлекаем сам объект из Hilt
+        if (foundHit) {
+            let obj = foundHit.object;
             if(!obj.userData.type && obj.parent && obj.parent.userData.type) obj = obj.parent;
+            targetObj = obj; // НАШЛИ ВАЛИДНУЮ ЦЕЛЬ!
+        }
+    }
 
-            const ud = obj.userData; 
+    // 3. ГЛАВНАЯ РАЗВИЛКА
+    if (targetObj) {
+        // === ПОПАЛИ В ОБЪЕКТ (ЯРУС ИЛИ ДЕКОР) ===
+        const ud = targetObj.userData;
+
+        // Если кликнули по другому торту в режиме сравнения
+        if(viewMode === 'both' && ud.cIdx !== activeCakeId) {
+            activeCakeId = ud.cIdx;
+            updateCameraTarget();
+        }
+
+        ui.selTier = ud.tIdx; // Подсвечиваем ярус
+
+        if(ud.type === 'decor') {
+            // --- ДЕКОР ---
+            const decorItem = getActiveTiers()[ud.tIdx].decor[ud.dIdx];
             
-            // Если кликнули по торту (смена А/В)
-            if(viewMode === 'both' && ud.cIdx !== activeCakeId) { 
-                activeCakeId = ud.cIdx; 
-                updateCameraTarget(); 
-            } 
-            
-            ui.selTier = ud.tIdx; 
-            
-            if(ud.type === 'decor') {
-                const decorItem = getActiveTiers()[ud.tIdx].decor[ud.dIdx];
-                
-                // --- ЛОГИКА БЛОКИРОВКИ ---
-                // --- ЛОГИКА БЛОКИРОВКИ (С ЗАЩИТОЙ ОТ СДВИГА) ---
-                if (decorItem.locked) {
-                    isDragging = false; 
-                    controls.enabled = true; // Камера вращается
-                    
-                    // 1. Запоминаем где нажали
-                    const startX = e.clientX;
-                    const startY = e.clientY;
-                    
-                    // 2. Создаем следилку за движением
-                    longPressMoveHandler = function(ev) {
-                        const dist = Math.hypot(ev.clientX - startX, ev.clientY - startY);
-                        // Если палец уехал больше чем на 10 пикселей (начали вращать торт)
-                        if (dist > 10) {
-                            // ОТМЕНЯЕМ ТАЙМЕР РАЗБЛОКИРОВКИ
-                            if (longPressTimer) clearTimeout(longPressTimer);
-                            longPressTimer = null;
-                            
-                            // Удаляем эту следилку, она больше не нужна
-                            window.removeEventListener('pointermove', longPressMoveHandler);
-                            longPressMoveHandler = null;
-                        }
-                    };
-                    
-                    // Включаем слежку
-                    window.addEventListener('pointermove', longPressMoveHandler);
-
-                    // 3. Запускаем таймер
-                    // 3. Запускаем таймер
-                    longPressTimer = setTimeout(() => {
-                        // --- МОМЕНТ РАЗБЛОКИРОВКИ ---
-                        
-                        // 1. Снимаем замок
-                        decorItem.locked = false; 
-                        
-                        // 2. Визуально обновляем меню
-                        ui.selDecorIdx = ud.dIdx;
-                        ui.selTier = ud.tIdx; 
-                        openMenu('decor');
-                        if (navigator.vibrate) navigator.vibrate(50);
-                        
-                        // 3. ЧИСТИМ СЛЕДИЛКУ (она больше не нужна, так как мы переходим к Drag)
-                        if (longPressMoveHandler) {
-                            window.removeEventListener('pointermove', longPressMoveHandler);
-                            longPressMoveHandler = null;
-                        }
-
-                        // 4. ГЛАВНОЕ: АКТИВИРУЕМ ПЕРЕТАСКИВАНИЕ СРАЗУ ЖЕ
-                        // (Копируем логику из обычного нажатия)
-                        isDragging = true;
-                        controls.enabled = false; // Блокируем камеру
-                        
-                        // Инициализируем данные для движения, используя координаты начала нажатия
-                        dragData = {
-                            startX: startX, 
-                            startY: startY,
-                            startValX: decorItem.x || 0, 
-                            startValY: decorItem.y || 0, 
-                            startValZ: decorItem.z || 0,
-                            placement: decorItem.placement
-                        };
-                        
-                        // Подключаем слушатели движения
-                        window.addEventListener('pointermove', onPointerMove);
-                        window.addEventListener('pointerup', onPointerUp);
-
-                    }, 1000);// время задержки по удержанию декора
-                    
-                    return; 
-                }
-
-                // Если не закрыт - работаем как обычно
-                let indicesToDrag = [];
-
-                if (isMultiSelect) {
-                    // Если нажали на объект, который УЖЕ в группе - будем двигать всю группу
-                    if (selectedDecors.includes(ud.dIdx)) {
-                        indicesToDrag = [...selectedDecors];
-                    } else {
-                        // Если нажали на новый объект в мульти-режиме -> просто выделяем его галочкой (без драга)
-                        toggleDecorSelection(ud.dIdx);
-                        return; 
+            if (decorItem.locked) {
+                // Логика разблокировки (Long Press)
+                isDragging = false; controls.enabled = true;
+                longPressMoveHandler = function(ev) {
+                    const dist = Math.hypot(ev.clientX - tapStartX, ev.clientY - tapStartY);
+                    if (dist > 10) {
+                        if (longPressTimer) clearTimeout(longPressTimer);
+                        longPressTimer = null;
+                        window.removeEventListener('pointermove', longPressMoveHandler);
+                        longPressMoveHandler = null;
                     }
-                } else {
-                    // Обычный режим
-                    ui.selDecorIdx = ud.dIdx;
-                    openMenu('decor');
-                    
-                    // --- ПРОВЕРКА СИММЕТРИИ ---
-                    if (decorItem.symId) {
-                        // Если есть симметрия, берем индексы ВСЕХ объектов с таким же ID
-                        indicesToDrag = [];
-                        tier.decor.forEach((d, i) => {
-                            if (d.symId === decorItem.symId) indicesToDrag.push(i);
-                        });
-                    } else {
-                        // Иначе только один
-                        indicesToDrag = [ud.dIdx];
-                    }
-                }
-                
-                isDragging = true;
-                controls.enabled = false; 
-                
-                // ГОТОВИМ ДАННЫЕ ДЛЯ ВСЕХ ОБЪЕКТОВ
-                dragData = {
-                    startX: e.clientX,
-                    startY: e.clientY,
-                    targets: [] // Сюда соберем всех участников
                 };
+                window.addEventListener('pointermove', longPressMoveHandler);
 
-                const tier = getActiveTiers()[ud.tIdx];
-                
-                indicesToDrag.forEach(idx => {
-                    const d = tier.decor[idx];
-                    if (d.locked) return; // Заблокированные не берем с собой
-
-                    dragData.targets.push({
-                        obj: d,
-                        startValX: d.x || 0,
-                        startValY: d.y || 0,
-                        startValZ: d.z || 0,
-                        placement: d.placement
-                    });
-                });
-                
-                window.addEventListener('pointermove', onPointerMove);
-                window.addEventListener('pointerup', onPointerUp);
-            } else {
-                // === ПРОСТАЯ ЛОГИКА ДЛЯ ЯРУСОВ ===
-                // 1. Снимаем выделение с декора
-                ui.selDecorIdx = null; 
-                
-                // 2. Запоминаем, какой ярус выбран
-                ui.selTier = ud.tIdx;
-                
-                // 3. Если меню "Структура" (Форма) уже открыто — обновляем его, чтобы показать настройки этого яруса
-                // Если открыто что-то другое (или ничего) — НЕ открываем меню сами.
-                if (ui.activeMenu === 'structure_edit') {
-                     openMenu('structure_edit');
-                } else {
-                     // Просто рисуем розовую обводку
-                     rebuildScene();
-                }
+                longPressTimer = setTimeout(() => {
+                    decorItem.locked = false; 
+                    ui.selDecorIdx = ud.dIdx; ui.selTier = ud.tIdx; 
+                    openMenu('decor');
+                    if (navigator.vibrate) navigator.vibrate(50);
+                    if (longPressMoveHandler) {
+                        window.removeEventListener('pointermove', longPressMoveHandler);
+                        longPressMoveHandler = null;
+                    }
+                    isDragging = true; controls.enabled = false; 
+                    dragData = {
+                        startX: tapStartX, startY: tapStartY,
+                        startValX: decorItem.x || 0, startValY: decorItem.y || 0, startValZ: decorItem.z || 0,
+                        placement: decorItem.placement
+                    };
+                    window.addEventListener('pointermove', onPointerMove);
+                    window.addEventListener('pointerup', onPointerUp);
+                }, 1000);
+                return; 
             }
-            rebuildScene(); 
-        } 
-    } 
-}
 
+            // Обычный выбор декора
+            let indicesToDrag = [];
+            if (isMultiSelect) {
+                if (selectedDecors.includes(ud.dIdx)) indicesToDrag = [...selectedDecors];
+                else { toggleDecorSelection(ud.dIdx); return; }
+            } else {
+                ui.selDecorIdx = ud.dIdx; openMenu('decor');
+                if (decorItem.symId) {
+                    const tier = getActiveTiers()[ud.tIdx];
+                    tier.decor.forEach((d, i) => { if (d.symId === decorItem.symId) indicesToDrag.push(i); });
+                } else indicesToDrag = [ud.dIdx];
+            }
+            
+            isDragging = true; controls.enabled = false; 
+            dragData = { startX: e.clientX, startY: e.clientY, targets: [] };
+            const tier = getActiveTiers()[ud.tIdx];
+            indicesToDrag.forEach(idx => {
+                const d = tier.decor[idx];
+                if (d.locked) return;
+                dragData.targets.push({ obj: d, startValX: d.x||0, startValY: d.y||0, startValZ: d.z||0, placement: d.placement });
+            });
+            window.addEventListener('pointermove', onPointerMove);
+            window.addEventListener('pointerup', onPointerUp);
+
+        } else {
+            // === ЯРУС (С ОБНОВЛЕНИЕМ МЕНЮ) ===
+            ui.selDecorIdx = null; 
+            ui.selTier = ud.tIdx;
+
+            // 1. Сначала обновляем выделение в 3D (розовая обводка)
+            rebuildScene();
+
+            // 2. Теперь проверяем меню.
+            // Добавили проверку "|| ui.activeMenu === 'structure'", 
+            // чтобы обновление срабатывало, даже если программа считает, что мы в списке.
+            if (ui.activeMenu === 'structure_edit' || ui.activeMenu === 'structure') {
+                 openMenu('structure_edit'); // Принудительно открываем настройки нового яруса
+            } else if (ui.activeMenu === 'color') {
+                 openMenu('color'); // Если были в цвете — обновляем цвет для нового яруса
+            } else if (ui.activeMenu === 'decor') {
+                 openMenu('decor'); // Если были в декоре — показываем слои нового яруса
+            }
+        }
+    } else {
+        // === НИКУДА НЕ ПОПАЛИ (ПУСТОТА) ===
+        // Гарантированный сброс
+        ui.selTier = null; 
+        ui.selDecorIdx = null; 
+        rebuildScene(); 
+        closeSheet(); 
+    }
+}
 function onPointerUp() {
     // 1. ГЛАВНОЕ ИСПРАВЛЕНИЕ: Отменяем таймер яруса, если палец поднят
     
