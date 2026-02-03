@@ -448,6 +448,7 @@ let ui = { selTier: null, selDecorIdx: null, activeMenu: null, colorTab: 'solid'
 let isMultiSelect = false;
 let selectedDecors = []; // Массив индексов [0, 2, 5]
 let history = [], historyPtr = -1;
+let cakeGap = 220; // <--- ДОБАВИТЬ ВОТ ЭТУ ПЕРЕМЕННУЮ (Стандартное расстояние)
 const texLoader = new THREE.TextureLoader();
 const STORAGE_KEY = 'cake_mobile_autosave_v2';
 const defaultTex = () => ({ url:null, mode:'tile', scale:1, repX:1, repY:1, offX:0, offY:0, rot:0, mixColor:false });
@@ -1427,10 +1428,32 @@ html += `<div class="control-label" style="margin-top:16px">❄️ Радиал�
             }
           }  
         } else if (menuName === 'scene') {
-        title.innerHTML = '📷 Вид и Камера';
-        html += `<div class="control-label">Ракурс</div><div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:16px"><button class="btn-sec" onclick="setCamView('front')" style="padding:10px 0; text-align:center">F</button><button class="btn-sec" onclick="setCamView('left')" style="padding:10px 0; text-align:center">L</button><button class="btn-sec" onclick="setCamView('right')" style="padding:10px 0; text-align:center">R</button><button class="btn-sec" onclick="setCamView('top')" style="padding:10px 0; text-align:center">T</button></div><button class="btn-sec" onclick="setCamView('reset')" style="width:100%; margin-bottom:16px">🔄 Сброс (ISO)</button><hr style="border:0; border-top:1px solid #eee; margin-bottom:16px"><button class="btn-full" onclick="takeScreenshot()">📸 Сохранить Скриншот</button>`;
+    title.innerHTML = '📷 Вид и Камера';
+    
+    // --- НОВЫЙ БЛОК: РАССТОЯНИЕ ---
+    // Показываем его только если включен режим A+B (viewMode === 'both')
+    if (viewMode === 'both') {
+        html += `<div class="control-label">↔ Расстояние между тортами</div>
+                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; background:#fff; padding:10px; border-radius:10px; border:1px solid #ddd">
+                    <span style="font-size:12px; font-weight:bold; color:#666">Близко</span>
+                    <input type="range" min="150" max="600" step="10" value="${cakeGap}" 
+                           style="flex:1; accent-color:#ec4899; height:20px"
+                           oninput="updateCakeGap(this.value)">
+                    <span style="font-size:12px; font-weight:bold; color:#666">Далеко</span>
+                 </div>`;
+    }
 
-    } 
+    html += `<div class="control-label">Ракурс</div>
+             <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:16px">
+                <button class="btn-sec" onclick="setCamView('front')" style="padding:10px 0; text-align:center">F</button>
+                <button class="btn-sec" onclick="setCamView('left')" style="padding:10px 0; text-align:center">L</button>
+                <button class="btn-sec" onclick="setCamView('right')" style="padding:10px 0; text-align:center">R</button>
+                <button class="btn-sec" onclick="setCamView('top')" style="padding:10px 0; text-align:center">T</button>
+             </div>
+             <button class="btn-sec" onclick="setCamView('reset')" style="width:100%; margin-bottom:16px">🔄 Сброс (ISO)</button>
+             <hr style="border:0; border-top:1px solid #eee; margin-bottom:16px">
+             <button class="btn-full" onclick="takeScreenshot()">📸 Сохранить Скриншот</button>`;
+}
   
  else if (menuName === 'project') {
         title.innerHTML = '💾 Файл и AR';
@@ -3476,6 +3499,12 @@ function renameDecor(val) {
     recordHistory();
 }
 
+function updateCakeGap(val) {
+    cakeGap = parseInt(val);
+    rebuildScene(); // Перестраиваем сцену с новым отступом
+    // Камеру не меняем, чтобы не сбивать настройку, просто двигаем торты
+}
+  
 init();
 </script>
   <script>
