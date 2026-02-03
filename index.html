@@ -1539,13 +1539,23 @@ function renderCompareTable() {
 function updateTierProp(key, val) {
     if(ui.selTier === null) return;
     const t = getActiveTiers()[ui.selTier];
+    
+    // Преобразуем строки в числа для размеров
     if(['d','h','w','dep','n'].includes(key)) val = parseInt(val);
     else if(key==='weight') val = parseFloat(val);
+    
     t[key] = val;
+    
     rebuildScene();
     recordHistory();
     if(viewMode === 'both') renderCompareTable();
-    // openMenu НЕ вызываем!
+    
+    // --- ИСПРАВЛЕНИЕ ---
+    // Если мы изменили ФОРМУ (shape), нужно принудительно перерисовать меню,
+    // чтобы появились нужные поля (Ширина/Глубина вместо Диаметра).
+    if (key === 'shape') {
+        openMenu('structure_edit');
+    }
 }
 
 function stepProp(key, delta) {
