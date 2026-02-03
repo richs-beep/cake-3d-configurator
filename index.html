@@ -599,19 +599,15 @@ function onWindowResize() {
 function animate() {
     requestAnimationFrame(animate);
 
-    // --- ЛОГИКА "РЕЛЬС" (Блокировка горизонтального сдвига) ---
+    // --- ЛОГИКА "РЕЛЬС" (Обновлено с учетом cakeGap) ---
     if (viewMode === 'single') {
-        // Жестко привязываем цель камеры к центру активного торта по X и Z
-        const lockedX = (activeCakeId === 0) ? -220 : 220;
+        // Теперь используем переменную cakeGap, а не 220
+        const lockedX = (activeCakeId === 0) ? -cakeGap : cakeGap;
         
-        controls.target.x = lockedX; // Запрещаем сдвиг влево/вправо
-        controls.target.z = 0;       // Запрещаем сдвиг вперед/назад
-        
-        // А вот Y (высоту) не трогаем — пусть OrbitControls меняет её,
-        // когда вы двигаете двумя пальцами.
+        controls.target.x = lockedX; 
+        controls.target.z = 0;       
     }
 
-    // Ограничители высоты (чтобы не улететь в подвал или космос)
     if (controls.target.y < 0) controls.target.y = 0;
     if (controls.target.y > 1000) controls.target.y = 1000;
 
@@ -677,17 +673,20 @@ function rebuildScene() {
   cakes.forEach((tiers, cIdx) => {
     if(viewMode === 'single' && cIdx !== activeCakeId) return;
     
-    const offsetX = (cIdx === 0) ? -220 : 220; 
+    // <--- ИСПРАВЛЕНО: Теперь используем переменную cakeGap, а не 220
+    const offsetX = (cIdx === 0) ? -cakeGap : cakeGap; 
+    
     const cakeGroup = new THREE.Group(); 
     cakeGroup.position.set(offsetX, 0, 0);
     
-    // LABEL A/B
+    // LABEL A/B (Сдвигаем букву тоже)
     const labelTex = createLabelTexture(cIdx === 0 ? 'A' : 'B');
     const labelMesh = new THREE.Mesh(
       new THREE.PlaneGeometry(80, 80), 
       new THREE.MeshBasicMaterial({ map: labelTex, transparent: true, side: THREE.DoubleSide })
     );
     labelMesh.rotation.x = -Math.PI / 2; 
+    // Буква висит чуть спереди (Z=220 можно оставить или тоже привязать к размеру, но пока оставим)
     labelMesh.position.set(0, 0.5, 220); 
     cakeGroup.add(labelMesh);
 
@@ -730,7 +729,7 @@ function rebuildScene() {
       const tGrp = new THREE.Group(); 
       tGrp.add(baseMesh);
 
-      // BOARD (ПОДЛОЖКА)
+      // BOARD
       if (idx === 0 && t.board && t.board.enabled) {
           const b = t.board;
           const off = b.offset || 0;
@@ -764,7 +763,7 @@ function rebuildScene() {
           tGrp.add(bMesh);
       }
 
-      // DRIPS (ПОДТЕКИ)
+      // DRIPS
       if (t.drips && t.drips.enabled) {
           const dripsMesh = createDrips(t.shape, (t.shape==='box')?t.d:(t.shape==='parallelepiped'?t.w:t.d/2), (t.shape==='box')?t.d:t.dep, t.drips.color||'#3e2723', t.drips.len, t.drips.freq);
           dripsMesh.position.y = h; tGrp.add(dripsMesh);
@@ -796,7 +795,6 @@ function rebuildScene() {
       // DECORS
       t.decor.forEach((s, si) => {
           if(!s.url) return;
-          // Проверяем: или это одиночный выбор, ИЛИ это один из выбранных в мульти-режиме
           const isSel = (ui.selTier === idx && activeCakeId === cIdx) && 
                         ( (ui.selDecorIdx === si && !isMultiSelect) || (isMultiSelect && selectedDecors.includes(si)) );
           let dMesh;
@@ -804,16 +802,15 @@ function rebuildScene() {
           if (s.url !== '3d_prim') {
               tex = texLoader.load(s.url);
           }
-         
-          // Добавляем чтение цвета tintColor (или белый по умолчанию)
-const matParams = { 
-    map: tex, 
-    transparent: true, 
-    alphaTest: 0.4,
-    color: s.tintColor || '#ffffff' 
-};
+          
+          const matParams = { 
+            map: tex, 
+            transparent: true, 
+            alphaTest: 0.4,
+            color: s.tintColor || '#ffffff' 
+          };
+
           if (s.placement === 'volume') {
-              // --- ОБЪЕМНЫЕ СТАНДАРТНЫЕ ФИГУРЫ ---
               let vGeo;
               if (s.shape === 'sphere') vGeo = new THREE.SphereGeometry(s.w / 2, 24, 24);
               else if (s.shape === 'cube') vGeo = new THREE.BoxGeometry(s.w, s.h, s.w);
@@ -824,87 +821,49 @@ const matParams = {
                   color: s.color || 0xffffff, 
                   roughness: 0.4, 
                   metalness: 0.1,
-                  flatShading: false // Чтобы шары были гладкими 
+                  flatShading: false 
               });
               
               dMesh = new THREE.Mesh(vGeo, vMat);
               dMesh.castShadow = true;
               dMesh.receiveShadow = true;
-
-              // Позиционируем на крышке (curY + h) + смещение пользователя (s.y)
-              // Половина высоты s.h/2 нужна, чтобы фигура стояла НА поверхности, а не была в ней центром
               dMesh.position.set(s.x || 0, curY + h + (s.h / 2) + (s.y || 0), s.z || 0);
-              // Сначала сбрасываем вращение и устанавливаем правильный порядок осей
-              
               dMesh.rotation.order = 'YXZ';
               dMesh.rotation.y = (s.rot || 0) * Math.PI / 180;
-              dMesh.rotation.x = (s.rotX || 0) * Math.PI / 180; // Наклон вперед/назад
+              dMesh.rotation.x = (s.rotX || 0) * Math.PI / 180; 
               dMesh.rotation.z = (s.rotZ || 0) * Math.PI / 180;
               
-              // Если это объемная фигура, мы пропускаем загрузку текстуры-наклейки
               dMesh.userData = { tIdx:idx, dIdx:si, cIdx:cIdx, type:'decor' };
               if(isSel) dMesh.add(new THREE.BoxHelper(dMesh, 0xec4899));
               tGrp.add(dMesh);
-              return; // Переходим к следующему элементу декора
+              return; 
           }
-if (s.placement === 'topper') {
-             // --- ТОППЕР (3D, зеркальный сзади) ---
-             
-             // 1. Настраиваем текстуру
-             tex.center.set(0.5, 0.5);
-             tex.repeat.set(1, 1);
-             
-             // 2. Создаем геометрию
-             const dGeo = new THREE.BoxGeometry(s.w, s.h, 3); // Толщина 3мм
-             
-             // --- МАГИЯ: Переворачиваем картинку только для задней стороны ---
-             // Мы меняем настройки самой модели, а не текстуры. Это работает всегда.
-             const uv = dGeo.attributes.uv;
-             const normal = dGeo.attributes.normal;
-             
-             for (let i = 0; i < normal.count; i++) {
-                 // Если нормаль смотрит назад (Z < -0.5), это задняя грань
-                 if (normal.getZ(i) < -0.5) {
-                     // Инвертируем X координату (зеркалим по горизонтали)
-                     // Было: 0 -> 1. Стало: 1 -> 0
-                     uv.setX(i, 1 - uv.getX(i));
-                 }
-             }
-             // Сообщаем Three.js, что мы изменили координаты
-             uv.needsUpdate = true; 
-
-             // 3. Материалы
-             const matTrans = new THREE.MeshBasicMaterial({transparent:true, opacity:0});
-             
-             // Используем одну и ту же картинку для обоих сторон.
-             // (Так как мы перевернули саму модель сзади, картинка ляжет зеркально сама)
-             // ВАЖНО: side: THREE.FrontSide, чтобы грань была видна снаружи
-             const matFace = new THREE.MeshBasicMaterial({...matParams, map: tex, side: THREE.FrontSide});
-             
-             // 4. Собираем Меш
-             // Индексы: 0-Right, 1-Left, 2-Top, 3-Bottom, 4-Front, 5-Back
-             dMesh = new THREE.Mesh(dGeo, [matTrans, matTrans, matTrans, matTrans, matFace, matFace]);
-             
-             // 5. Позиция
-             dMesh.position.set(s.x || 0, curY + h + (s.h/2) - 5 + (s.y || 0), s.z || 0);
-             
-             // --- ВРАЩЕНИЕ 3D ---
-             dMesh.rotation.order = 'YXZ'; 
-             dMesh.rotation.y = -(s.rot || 0) * Math.PI / 180; 
-             dMesh.rotation.x = (s.rotX || 0) * Math.PI / 180; 
-             dMesh.rotation.z = (s.rotZ || 0) * Math.PI / 180; 
+          if (s.placement === 'topper') {
+              tex.center.set(0.5, 0.5); tex.repeat.set(1, 1);
+              const dGeo = new THREE.BoxGeometry(s.w, s.h, 3);
+              const uv = dGeo.attributes.uv; const normal = dGeo.attributes.normal;
+              for (let i = 0; i < normal.count; i++) {
+                  if (normal.getZ(i) < -0.5) uv.setX(i, 1 - uv.getX(i));
+              }
+              uv.needsUpdate = true; 
+              const matTrans = new THREE.MeshBasicMaterial({transparent:true, opacity:0});
+              const matFace = new THREE.MeshBasicMaterial({...matParams, map: tex, side: THREE.FrontSide});
+              dMesh = new THREE.Mesh(dGeo, [matTrans, matTrans, matTrans, matTrans, matFace, matFace]);
+              dMesh.position.set(s.x || 0, curY + h + (s.h/2) - 5 + (s.y || 0), s.z || 0);
+              dMesh.rotation.order = 'YXZ'; 
+              dMesh.rotation.y = -(s.rot || 0) * Math.PI / 180; 
+              dMesh.rotation.x = (s.rotX || 0) * Math.PI / 180; 
+              dMesh.rotation.z = (s.rotZ || 0) * Math.PI / 180; 
           }
- else if (s.placement === 'top') {
+          else if (s.placement === 'top') {
               dMesh = new THREE.Mesh(new THREE.PlaneGeometry(s.w, s.h), new THREE.MeshBasicMaterial({...matParams, side:THREE.DoubleSide, depthWrite:false, polygonOffset:true, polygonOffsetFactor:-2}));
               dMesh.rotation.x = -Math.PI / 2; dMesh.rotation.z = -(s.rot || 0) * Math.PI / 180;
               dMesh.position.set(s.x || 0, curY + h + 0.2 + (s.y || 0), s.z || 0);
           } else {
-              // SIDE DECOR - УНИВЕРСАЛЬНОЕ СКОЛЬЖЕНИЕ
               const isBox = (t.shape === 'box' || t.shape === 'parallelepiped');
               const baseRadius = (t.shape==='parallelepiped' ? t.dep : t.d) / 2;
               const depthOffset = baseRadius + 0.6 + (s.z || 0);
               let dGeo;
-
               if (isBox) {
                   dGeo = new THREE.PlaneGeometry(s.w, s.h);
                   const width = (t.shape === 'box' ? t.d : t.w);
@@ -952,7 +911,7 @@ if (s.placement === 'topper') {
       let rMax = t.d/2;
       if(t.shape==='box') rMax = (t.d * Math.sqrt(2))/2;
       if(t.shape==='parallelepiped') rMax = Math.max(t.w, t.dep)/2;
-      infoLabel.position.set(dir * (rMax + 160), h/2, 0);//отступ от тортов на скриншоте
+      infoLabel.position.set(dir * (rMax + 160), h/2, 0);
       tGrp.add(infoLabel);
       
       tGrp.position.y = curY;
@@ -1695,7 +1654,22 @@ function updateCameraTarget() {
     
     controls.update();
 }
-function setCamView(type) { let tx = 0; if (viewMode === 'single') tx = (activeCakeId === 0) ? -220 : 220; controls.target.set(tx, 100, 0); if (type === 'front') camera.position.set(tx, 100, 600); if (type === 'left') camera.position.set(tx - 600, 100, 0); if (type === 'right') camera.position.set(tx + 600, 100, 0); if (type === 'top') camera.position.set(tx, 800, 0); if (type === 'reset') camera.position.set(tx + 400, 300, 400); controls.update(); }
+  
+function setCamView(type) { 
+    let tx = 0; 
+    // Обновлено: используем cakeGap вместо 220
+    if (viewMode === 'single') tx = (activeCakeId === 0) ? -cakeGap : cakeGap; 
+    
+    controls.target.set(tx, 100, 0); 
+    
+    if (type === 'front') camera.position.set(tx, 100, 600); 
+    if (type === 'left') camera.position.set(tx - 600, 100, 0); 
+    if (type === 'right') camera.position.set(tx + 600, 100, 0); 
+    if (type === 'top') camera.position.set(tx, 800, 0); 
+    if (type === 'reset') camera.position.set(tx + 400, 300, 400); 
+    
+    controls.update(); 
+}
 
 // Глобальный таймер для долгого нажатия
 let longPressTimer = null;
