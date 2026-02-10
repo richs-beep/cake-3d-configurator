@@ -368,110 +368,67 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--primary); 
 @media (orientation: landscape) {
   #ui-layer { flex-direction: row; }
   
-  /* Боковая панель (тулбар) слева */
+  /* 1. Панель инструментов слева */
   .toolbar { 
       width: 70px; height: 100%; 
       flex-direction: column; justify-content: center; 
       order: 1; border-right: 1px solid #eee;
-      padding-top: 0; padding-bottom: 0;
   }
   
-  /* Шторка превращается в боковую панель справа */
+  /* 2. Шторка справа (как боковая панель) */
   .bottom-sheet { 
       left: auto; right: 0; bottom: 0; top: 0; 
-      width: 320px; /* Фиксированная ширина */
+      width: 320px; 
       height: 100% !important;       
       max-height: 100% !important; 
       border-radius: 0; border-left: 1px solid #eee;
       transform: translateX(0); 
-      /* ВАЖНО: Разрешаем скролл внутри контента */
-      display: flex; flex-direction: column;
-      padding: 0 !important; 
-      background: rgba(255, 255, 255, 0.95) !important; /* Чуть плотнее фон */
+      overflow-y: auto !important; 
+      padding: 10px !important;
+      display: block !important; /* Возвращаем блочный контекст, чтобы не ломать Декор */
   }
 
-  /* Скрываем ручку перетаскивания (в боковом режиме она не нужна) */
+  /* Скрываем ручку шторки */
   .sheet-handle-area { display: none !important; }
 
-  /* Настраиваем область прокрутки */
-  .sheet-content {
-      overflow-y: auto !important;
-      padding: 16px !important;
-      padding-bottom: 40px !important;
-      flex: 1;
-  }
-
-  /* 1. ВЫСТРАИВАЕМ ВСЁ В ОДНУ ВЕРТИКАЛЬНУЮ КОЛОНКУ */
-  .control-grid-2 {
+  /* 3. ИСПРАВЛЕНИЕ ПОЛЕЙ ВВОДА (Чтобы влазили кнопки + и -) */
+  /* Делаем сетку вертикальной (один под другим) */
+  .bottom-sheet .control-grid-2 {
       display: flex !important;
-      flex-direction: column !important; /* Элементы друг под другом */
-      gap: 12px !important;
-      margin-bottom: 12px !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+      margin-bottom: 15px !important;
   }
   
-  /* Убираем отступы у групп внутри сетки */
-  .control-grid-2 .control-group {
-      margin-bottom: 0 !important;
-  }
-
-  /* 2. КНОПКА "СДЕЛАТЬ СКРИНШОТ" И ДРУГИЕ БОЛЬШИЕ КНОПКИ */
-  .bottom-sheet .btn-full {
-      white-space: normal !important; /* Разрешаем перенос текста */
-      height: auto !important;        /* Высота подстраивается под текст */
-      min-height: 44px !important;
-      padding: 8px 12px !important;
-      line-height: 1.2 !important;    /* Плотный интерлиньяж */
-      font-size: 13px !important;
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      text-align: center;
-      width: 100% !important;
-  }
-
-  /* 3. КОМПАКТНЫЕ ПОЛЯ ВВОДА (ЦИФРЫ) */
+  /* Контейнер степпера на всю ширину */
   .bottom-sheet .stepper {
       width: 100% !important;
-      height: 36px !important; /* Уменьшаем высоту строки */
       display: flex !important;
-      justify-content: space-between !important; /* Раскидываем кнопки по краям */
   }
 
+  /* Кнопки + и - фиксируем, чтобы их не сплющивало */
   .bottom-sheet .stepper button {
-      width: 44px !important; /* Квадратные кнопки */
-      min-width: 44px !important;
-      height: 36px !important;
-      font-size: 18px !important;
-      padding: 0 !important;
-      display: flex; align-items: center; justify-content: center;
-  }
-  
-  /* Узкое поле ввода цифр */
-  .bottom-sheet .stepper input {
-      height: 36px !important;
-      min-height: 36px !important;
-      width: 80px !important;      /* Фиксируем небольшую ширину */
-      flex: 0 0 80px !important;   /* Запрещаем растягиваться */
-      font-size: 14px !important;
-      padding: 0 4px !important;
+      flex-shrink: 0 !important;
+      width: 44px !important;
   }
 
-  /* Исправление для кнопок в ряд (Декор: Выпрямить и т.д.) */
-  .bottom-sheet .btn-grid {
-      display: grid !important;
-      grid-template-columns: 1fr 1fr !important; /* Всегда 2 колонки */
-      gap: 8px !important;
+  /* Поле ввода заставляем сжиматься, если места мало (ВАЖНО!) */
+  .bottom-sheet .stepper input {
+      min-width: 0 !important; 
+      flex: 1 !important; /* Занимает всё оставшееся место */
+      width: auto !important;
   }
-  
-  /* Если кнопка одна широкая (span 2), даем ей растянуться */
-  .bottom-sheet .btn-grid button[style*="span 2"] {
-       grid-column: span 2;
-  }
-  
-  /* Уменьшаем размер шрифта заголовков полей для экономии места */
-  .control-label {
-      font-size: 11px !important;
-      margin-bottom: 4px !important;
+
+  /* 4. ТОЛЬКО КНОПКА СКРИНШОТА (Текст в несколько строк) */
+  .bottom-sheet button[onclick*="takeScreenshot"] {
+      white-space: normal !important; /* Разрешаем перенос */
+      height: auto !important;
+      min-height: 44px !important;
+      padding: 5px 10px !important;
+      line-height: 1.1 !important;
+      display: flex !important;
+      align-items: center; 
+      justify-content: center;
   }
 }
   
