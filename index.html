@@ -675,20 +675,21 @@ const GFONTS = [
 ];
 
 
-// Функция принудительной загрузки шрифта (ХАК СО SPAN)
 function loadFont(f) {
     if(!f) return;
-    // Убираем кавычки из названия самого шрифта
-    const cf = f.replace(/['"]/g, ""); 
-    
-    // 1. Ссылка CSS (Используем обратные кавычки ` ` - они на клавише с буквой Ё)
+    const cf = f.replace(/['"]/g, ""); // Убираем лишние кавычки из названия
+
+    // 1. Добавляем ссылку CSS
     const l = document.createElement('link');
-    // ВНИМАНИЕ: Ниже используются обратные кавычки (backticks), а внутри ${...}
-    l.href = `https://fonts.googleapis.com/css?family=${cf.replace(/ /g, '+')}&display=swap`;
+    
+    // ВАЖНО: Обратите внимание на кавычки ниже. Мы закрываем строку ("), ставим плюс (+), 
+    // вставляем переменную, снова плюс (+) и открываем строку (").
+    l.href = "https://fonts.googleapis.com/css?family=" + cf.replace(/ /g, '+') + "&display=swap";
+    
     l.rel = 'stylesheet';
     document.head.appendChild(l);
 
-    // 2. Невидимый элемент для инициализации
+    // 2. Создаем невидимый элемент для инициализации шрифта
     const t = document.createElement('span');
     t.style.fontFamily = f; 
     t.style.opacity = '0'; 
@@ -697,9 +698,9 @@ function loadFont(f) {
     t.textContent = 'font_test';
     document.body.appendChild(t); 
     
+    // Удаляем мусор через 2 секунды
     setTimeout(() => { if(t.parentNode) document.body.removeChild(t); }, 2000);
 }
-
 // Предзагрузка всех шрифтов при старте
 function preloadAllFonts() {
     GFONTS.forEach(font => loadFont(font.f));
