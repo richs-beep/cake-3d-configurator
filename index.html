@@ -386,122 +386,115 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--primary); 
       min-height: 100% !important;
       border-radius: 0; border-left: 1px solid #eee; border-top: none;
       transform: translateX(0); 
-      overflow-y: auto; 
+      overflow-y: auto !important; /* Разрешаем вертикальную прокрутку всей панели */
       padding: 15px !important;
+      display: flex;
+      flex-direction: column;
   }
   
   .bottom-sheet.hidden-sheet { transform: translateX(100%) !important; }
   .sheet-handle-area { display: none; }
   
-  /* Верхние элементы */
-  .top-bar { 
-      position: absolute; top: 0; left: 50%; 
-      transform: translateX(-50%); width: auto; 
-  }
+  /* Верхние инструменты */
   .top-tools { top: 10px; right: 340px; }
   #compare-overlay { left: 80px; top: 20px; }
 
-  /* ============================================== */
-  /* === ИСПРАВЛЕНИЯ ИНТЕРФЕЙСА (LANDSCAPE) === */
-  /* ============================================== */
-
-  /* 1. КАРУСЕЛИ (Прокрутка мышью на PC и пальцем) */
+  /* === КАРУСЕЛИ (Выбор формы и т.д.) === */
   .bottom-sheet .chip-scroll {
       display: flex !important;
-      overflow-x: auto !important; 
+      overflow-x: scroll !important; /* Принудительно включаем */
       overflow-y: hidden !important;
       width: 100% !important;
-      gap: 10px;
-      padding: 10px 0 !important;
-      scrollbar-width: thin; /* Для Firefox */
+      gap: 12px;
+      padding: 10px 5px 15px 5px !important; /* Место для скроллбара снизу */
+      scrollbar-width: thin !important; 
+      scrollbar-color: #ccc transparent !important;
       -webkit-overflow-scrolling: touch;
   }
 
-  /* Видимый скроллбар для Chrome/Edge/Safari (чтобы на PC можно было крутить) */
+  /* Настройка видимости полосы прокрутки для PC */
   .bottom-sheet .chip-scroll::-webkit-scrollbar {
-      height: 6px;
+      height: 6px !important;
+      display: block !important;
   }
   .bottom-sheet .chip-scroll::-webkit-scrollbar-thumb {
-      background: #dadada;
-      border-radius: 10px;
+      background: #ccc !important;
+      border-radius: 10px !important;
+  }
+  .bottom-sheet .chip-scroll::-webkit-scrollbar-track {
+      background: #f1f1f1 !important;
   }
 
-  /* 2. КНОПКА ЗАГРУЗИТЬ (Вкладка Оформление) */
+  /* === КНОПКИ-СЕТКИ (Декор, Вид, Симметрия) === */
+  .bottom-sheet .btn-grid {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      justify-content: center !important; /* Центрируем группу кнопок */
+      gap: 8px !important;
+      width: 100% !important;
+      margin: 10px 0 !important;
+  }
+
+  .bottom-sheet .btn-grid button,
+  .bottom-sheet .symmetry-controls button,
+  .bottom-sheet .alignment-controls button {
+      min-width: 60px !important; /* Увеличиваем ширину, чтобы текст влез */
+      height: 48px !important;
+      padding: 5px 8px !important;
+      font-size: 12px !important;
+      line-height: 1.2 !important;
+      white-space: normal !important; /* Разрешаем перенос текста если длинный */
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-align: center !important;
+      border-radius: 8px !important;
+      border: 1px solid #ddd !important;
+      background: #fff !important;
+      overflow: visible !important; /* Чтобы текст не превращался в точки */
+  }
+
+  /* Специально для кнопок во вкладке ВИД (F, L, R, T) */
+  .bottom-sheet .btn-grid[style*="1fr 1fr 1fr 1fr"] button {
+      min-width: 50px !important;
+      height: 50px !important;
+  }
+
+  /* === КНОПКА ЗАГРУЗИТЬ (Оформление) === */
   .bottom-sheet .texture-upload-btn {
       width: 100% !important;
-      height: auto !important; 
-      min-height: 70px !important;
+      height: auto !important;
+      min-height: 80px !important;
       display: flex !important;
       flex-direction: column !important;
       align-items: center !important;
       justify-content: center !important;
-      gap: 5px !important;
-      padding: 10px !important;
-      border: 1px solid #ddd;
-      background: #fff;
-  }
-  .bottom-sheet .texture-upload-btn span {
-      display: block !important;
-      text-align: center;
-      font-size: 13px;
+      gap: 8px !important;
+      padding: 15px !important;
   }
 
-  /* 3. ОБЩИЕ КНОПКИ И СЕТКИ (Центрирование) */
-  .bottom-sheet .btn-grid {
+  /* === ДЖОЙСТИК (Перемещение) === */
+  .bottom-sheet div[style*="grid-template-columns"] {
       display: grid !important;
       justify-content: center !important;
-      margin: 10px auto !important;
-      width: fit-content !important;
-      gap: 8px !important;
-  }
-
-  /* Кнопки камер и выбора (Декор/Вид) */
-  .bottom-sheet .btn-grid button {
-      min-width: 48px !important; 
-      height: 48px !important;
-      font-size: 13px !important;
-      display: flex !important;
-      align-items: center;
-      justify-content: center;
-      border-radius: 8px !important;
-      padding: 5px !important;
-      white-space: nowrap;
-  }
-
-  /* 4. ДЖОЙСТИК И ВЫРАВНИВАНИЕ (Скрин 3) */
-  /* Ищем родителя кнопок управления движением */
-  .bottom-sheet div[style*="grid-template-columns"] {
-      justify-content: center !important;
       margin: 0 auto !important;
-      width: fit-content !important;
+      gap: 6px !important;
+  }
+  
+  /* Увеличиваем кнопки самого джойстика */
+  .bottom-sheet div[style*="grid-template-columns"] button {
+      width: 44px !important;
+      height: 44px !important;
+      min-width: 44px !important;
   }
 
-  /* Кнопки Симметрии */
-  .bottom-sheet .symmetry-controls, 
-  .bottom-sheet .alignment-controls {
-      display: flex !important;
-      flex-wrap: wrap;
-      justify-content: center !important;
-      gap: 6px;
-  }
-
-  /* Компактные инпуты */
-  .bottom-sheet input,
-  .bottom-sheet select {
-      height: 36px !important;
-      font-size: 13px !important;
-      padding: 0 8px !important;
-  }
-
-  /* 5. ФИКС ТЕКСТА */
+  /* Компактные заголовки */
   .bottom-sheet .control-label {
       text-align: center !important;
-      width: 100%;
-      margin-bottom: 5px;
-      font-weight: bold;
+      display: block !important;
+      margin: 15px 0 5px 0 !important;
       font-size: 12px;
-      text-transform: uppercase;
-      color: #777;
+      color: #888;
   }
 }
 
