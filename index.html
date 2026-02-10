@@ -682,7 +682,7 @@ function loadFont(f) {
     
     // 1. Добавляем ссылку CSS
     const l = document.createElement('link');
-    l.href = "https://fonts.googleapis.com/css?family=' + cf.replace(/ /g, '+') + '&display=swap";
+    l.href = "https://fonts.googleapis.com/css?family=" + cf.replace(/ /g, '+') + "&display=swap";
     l.rel = 'stylesheet';
     document.head.appendChild(l);
 
