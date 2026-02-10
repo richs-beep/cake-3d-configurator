@@ -678,15 +678,17 @@ const GFONTS = [
 // Функция принудительной загрузки шрифта (ХАК СО SPAN)
 function loadFont(f) {
     if(!f) return;
-    const cf = f.replace(/['"]/g, ""); // Убираем кавычки для URL
+    // Убираем кавычки из названия самого шрифта
+    const cf = f.replace(/['"]/g, ""); 
     
-    // 1. Добавляем ссылку CSS
+    // 1. Ссылка CSS (Используем обратные кавычки ` ` - они на клавише с буквой Ё)
     const l = document.createElement('link');
-    l.href = "https://fonts.googleapis.com/css?family=" + cf.replace(/ /g, '+') + "&display=swap";
+    // ВНИМАНИЕ: Ниже используются обратные кавычки (backticks), а внутри ${...}
+    l.href = `https://fonts.googleapis.com/css?family=${cf.replace(/ /g, '+')}&display=swap`;
     l.rel = 'stylesheet';
     document.head.appendChild(l);
 
-    // 2. Создаем невидимый элемент с этим шрифтом, чтобы браузер начал рендеринг
+    // 2. Невидимый элемент для инициализации
     const t = document.createElement('span');
     t.style.fontFamily = f; 
     t.style.opacity = '0'; 
@@ -695,7 +697,6 @@ function loadFont(f) {
     t.textContent = 'font_test';
     document.body.appendChild(t); 
     
-    // Удаляем мусор через 2 секунды
     setTimeout(() => { if(t.parentNode) document.body.removeChild(t); }, 2000);
 }
 
