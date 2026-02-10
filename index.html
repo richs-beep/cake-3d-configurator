@@ -365,14 +365,13 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--primary); 
 }
 
   /* --- ЛАНДШАФТНЫЙ РЕЖИМ (ГОРИЗОНТАЛЬНЫЙ) --- */
-/* --- ЛАНДШАФТНЫЙ РЕЖИМ (ГОРИЗОНТАЛЬНЫЙ) --- */
 @media (orientation: landscape) {
   #ui-layer { flex-direction: row; }
   
   .toolbar { 
       width: 70px; height: 100%; 
       flex-direction: column; justify-content: center; 
-      order: 1; padding: 0; border-right: 1px solid #eee;
+      order: 1; border-right: 1px solid #eee;
   }
   
   .bottom-sheet { 
@@ -383,100 +382,92 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--primary); 
       border-radius: 0; border-left: 1px solid #eee;
       transform: translateX(0); 
       overflow-y: auto !important; 
-      padding: 15px !important;
-      display: block !important; /* Уходим от flex для стабильности скролла */
+      padding: 12px !important;
   }
 
-  .bottom-sheet.hidden-sheet { transform: translateX(100%) !important; }
-
-  /* === 1. ПОЛНОЕ ИСПРАВЛЕНИЕ СКРОЛЛА (Формы яруса) === */
-  .bottom-sheet .chip-scroll {
-      display: block !important; /* Меняем на block */
-      white-space: nowrap !important; /* Выстраиваем элементы в одну линию */
-      overflow-x: scroll !important; 
-      overflow-y: hidden !important;
-      width: 100% !important;
-      padding: 10px 0 20px 0 !important; /* Большой отступ снизу для скролла */
-      -webkit-overflow-scrolling: touch !important;
+  /* 1. ИСПРАВЛЕНИЕ: КНОПКИ ВВЕРХ / ВНИЗ (Настройка яруса) */
+  /* Делаем их компактными и в одну строку, чтобы не занимали весь экран */
+  .bottom-sheet .btn-full {
+      width: 48% !important; /* Две кнопки в ряд */
+      display: inline-flex !important;
+      margin: 4px 1% !important;
+      min-height: 36px !important;
+      height: 36px !important;
+      font-size: 12px !important;
   }
 
-  /* Форсируем отображение полосы прокрутки */
-  .bottom-sheet .chip-scroll::-webkit-scrollbar {
-      height: 8px !important;
-      display: block !important;
-  }
-  .bottom-sheet .chip-scroll::-webkit-scrollbar-thumb {
-      background-color: #bbb !important;
-      border-radius: 10px !important;
-  }
-  .bottom-sheet .chip-scroll::-webkit-scrollbar-track {
-      background: #f0f0f0 !important;
-      display: block !important;
-  }
-
-  /* Элементы внутри скролла (чипы) */
-  .bottom-sheet .chip-scroll > * {
-      display: inline-flex !important; /* Чтобы white-space: nowrap работал */
-      vertical-align: middle;
-      margin-right: 8px;
-  }
-
-  /* === 2. КНОПКИ В ДЕКОРЕ И ВИДЕ (Крупные и с текстом) === */
-  .bottom-sheet .btn-grid, 
-  .bottom-sheet .symmetry-controls,
-  .bottom-sheet .alignment-controls {
+  /* 2. ИСПРАВЛЕНИЕ: ВЫРАВНИВАНИЕ (Декор - "Выпрямить" и "Центр") */
+  /* Здесь кнопки должны быть широкими, чтобы влез текст */
+  .bottom-sheet .btn-grid {
       display: flex !important;
       flex-wrap: wrap !important;
       justify-content: center !important;
-      gap: 10px !important;
+      gap: 6px !important;
       width: 100% !important;
   }
 
-  /* Принудительно задаем размер кнопкам, чтобы влез текст */
-  .bottom-sheet .btn-grid button,
-  .bottom-sheet .symmetry-controls button,
-  .bottom-sheet .alignment-controls button,
-  .bottom-sheet .btn-sec {
-      min-width: 85px !important; /* Еще шире, чтобы влезло "Центр X" */
-      min-height: 44px !important;
-      height: auto !important;
-      padding: 8px 4px !important;
-      font-size: 11px !important; /* Чуть меньше шрифт, чтобы не обрезало */
+  .bottom-sheet .btn-grid button {
+      min-width: 90px !important; /* Увеличено для "Выпрямить" */
+      min-height: 40px !important;
+      padding: 4px !important;
+      font-size: 11px !important;
       line-height: 1.1 !important;
-      white-space: normal !important; /* Разрешаем перенос строк */
+      white-space: normal !important;
       word-wrap: break-word !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
       text-align: center !important;
-      border: 1px solid #ccc !important;
-      overflow: visible !important;
   }
 
-  /* Исключение для кнопок камер (F, L, R, T) - их можно оставить квадратами */
+  /* Исключение для кнопок камер (F, L, R, T) во вкладке Вид */
   .bottom-sheet .btn-grid[style*="1fr 1fr 1fr 1fr"] button {
-      min-width: 50px !important;
-      width: 50px !important;
-      height: 50px !important;
+      min-width: 55px !important;
+      height: 44px !important;
   }
 
-  /* === 3. КНОПКА ЗАГРУЗИТЬ === */
+  /* 3. КАРУСЕЛИ (Формы яруса) */
+  /* Полоска остается, но уменьшаем отступы */
+  .bottom-sheet .chip-scroll {
+      display: block !important;
+      white-space: nowrap !important;
+      overflow-x: auto !important;
+      padding: 8px 0 15px 0 !important;
+  }
+
+  .bottom-sheet .chip-scroll::-webkit-scrollbar { height: 6px !important; display: block !important; }
+  .bottom-sheet .chip-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+
+  /* 4. РЕГУЛИРОВКА РАЗМЕРОВ (Размер, Вес) */
+  /* Чтобы не убегало за экран, делаем степперы компактнее */
+  .bottom-sheet .control-grid-2 {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important; /* Возвращаем в 2 колонки */
+      gap: 10px !important;
+      margin-bottom: 10px !important;
+  }
+
+  .bottom-sheet .stepper {
+      height: 34px !important;
+  }
+
+  .bottom-sheet .stepper button {
+      width: 34px !important;
+      min-width: 34px !important;
+  }
+
+  /* 5. КНОПКА ЗАГРУЗИТЬ */
   .bottom-sheet .texture-upload-btn {
-      width: 100% !important;
-      height: auto !important;
-      min-height: 80px !important;
-      padding: 10px !important;
-      display: flex !important;
+      min-height: 60px !important;
+      padding: 8px !important;
       flex-direction: column !important;
-      align-items: center !important;
-      justify-content: center !important;
   }
 
-  /* === 4. ДЖОЙСТИК === */
+  /* 6. ДЖОЙСТИК */
   .bottom-sheet div[style*="grid-template-columns"] {
       display: grid !important;
       justify-content: center !important;
-      margin: 10px auto !important;
+      margin: 5px auto !important;
   }
 }
 /* --- МОБИЛЬНАЯ ОПТИМИЗАЦИЯ (Крупные кнопки снизу) --- */
