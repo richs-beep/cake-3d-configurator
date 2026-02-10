@@ -382,90 +382,92 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--primary); 
       border-radius: 0; border-left: 1px solid #eee;
       transform: translateX(0); 
       overflow-y: auto !important; 
-      padding: 12px !important;
+      padding: 10px !important; /* Чуть меньше паддинг, чтобы дать место контенту */
   }
 
-  /* 1. КНОПКИ ВВЕРХ / ВНИЗ (Два ряда, небольшие) */
+  /* 1. КНОПКИ ВВЕРХ / ВНИЗ */
   .bottom-sheet .btn-full {
-      width: 140px !important; /* Ограничиваем ширину */
-      margin: 5px auto !important; /* Центрируем и ставим друг под друга */
-      display: flex !important;
-      min-height: 34px !important;
-      height: 34px !important;
+      width: 160px !important; 
+      margin: 4px auto !important;
+      min-height: 32px !important;
+      height: 32px !important;
       font-size: 12px !important;
-      padding: 0 10px !important;
   }
 
-  /* 2. СТЕППЕРЫ (Размеры и вес в одну колонку) */
+  /* 2. СТЕППЕРЫ (Размеры, Вес, Высота) */
+  /* Убираем лишние отступы, чтобы всё влезло в один ряд по высоте */
   .bottom-sheet .control-grid-2 {
       display: flex !important;
-      flex-direction: column !important; /* Строго в один столбик */
-      gap: 12px !important;
-      margin-bottom: 15px !important;
+      flex-direction: column !important;
+      gap: 6px !important; /* Уменьшил зазор */
+      margin-bottom: 10px !important;
   }
 
   .bottom-sheet .stepper {
       width: 100% !important;
-      height: 38px !important;
-      justify-content: space-between !important;
+      height: 34px !important; /* Компактнее */
   }
 
   .bottom-sheet .stepper button {
-      width: 40px !important;
-      min-width: 40px !important;
-      height: 38px !important;
+      width: 36px !important;
+      min-width: 36px !important;
+      height: 34px !important;
+  }
+  
+  /* Исправляем инпуты внутри степперов, чтобы не «съедали» кнопку Вес */
+  .bottom-sheet .stepper input {
+      height: 34px !important;
+      padding: 0 5px !important;
   }
 
-  /* 3. ДЕКОР: ВЫПРЯМИТЬ (Увеличиваем ширину еще сильнее) */
+  /* 3. КНОПКА СОХРАНИТЬ СКРИНШОТ (Панель Вид) */
+  .bottom-sheet button[onclick*="takeScreenshot"],
+  .bottom-sheet .btn-full[style*="background-color: #e91e63"] {
+      width: 100% !important;
+      height: auto !important;
+      min-height: 40px !important;
+      padding: 5px !important;
+      white-space: normal !important; /* Разрешаем перенос текста */
+      line-height: 1.1 !important;
+      font-size: 13px !important;
+      display: flex !important;
+      align-items: center;
+      justify-content: center;
+  }
+
+  /* 4. ДЕКОР: ВЫПРЯМИТЬ (Максимальная ширина) */
   .bottom-sheet .btn-grid {
       display: flex !important;
       flex-wrap: wrap !important;
       justify-content: center !important;
-      gap: 8px !important;
-      width: 100% !important;
+      gap: 6px !important;
   }
 
   .bottom-sheet .btn-grid button {
-      min-width: 110px !important; /* Увеличено до 110px, чтобы влезло "Выпрямить" */
-      min-height: 44px !important;
-      padding: 5px 10px !important;
+      min-width: 125px !important; /* Еще чуть шире для гарантии */
+      min-height: 40px !important;
+      padding: 4px 8px !important;
       font-size: 11px !important;
-      line-height: 1.2 !important;
-      white-space: normal !important; /* Разрешаем перенос */
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      text-align: center !important;
+      white-space: normal !important;
+      word-break: break-all; /* Если совсем не лезет — перенесет по буквам */
   }
 
-  /* Кнопки камер (F, L, R, T) - оставляем компактными */
-  .bottom-sheet .btn-grid[style*="1fr 1fr 1fr 1fr"] button {
-      min-width: 50px !important;
-      height: 50px !important;
-  }
-
-  /* 4. КАРУСЕЛИ (Формы яруса) */
+  /* 5. КАРУСЕЛИ И ФОРМЫ */
   .bottom-sheet .chip-scroll {
       display: block !important;
       white-space: nowrap !important;
       overflow-x: auto !important;
-      padding: 8px 0 15px 0 !important;
+      padding-bottom: 12px !important;
   }
 
-  .bottom-sheet .chip-scroll::-webkit-scrollbar { height: 6px !important; display: block !important; }
-  .bottom-sheet .chip-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+  .bottom-sheet .chip-scroll::-webkit-scrollbar { height: 5px !important; }
 
-  /* 5. КНОПКА ЗАГРУЗИТЬ */
-  .bottom-sheet .texture-upload-btn {
-      min-height: 60px !important;
-      flex-direction: column !important;
-  }
-
-  /* 6. ДЖОЙСТИК (Центрирование) */
+  /* 6. ДЖОЙСТИК */
   .bottom-sheet div[style*="grid-template-columns"] {
       display: grid !important;
       justify-content: center !important;
       margin: 5px auto !important;
+      gap: 4px !important;
   }
 }
 /* --- МОБИЛЬНАЯ ОПТИМИЗАЦИЯ (Крупные кнопки снизу) --- */
