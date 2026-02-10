@@ -364,7 +364,7 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--primary); 
     transform: scale(0.95);
 }
 
-  /* --- ЛАНДШАФТНЫЙ РЕЖИМ (ГОРИЗОНТАЛЬНЫЙ) --- */
+/* --- ЛАНДШАФТНЫЙ РЕЖИМ (ГОРИЗОНТАЛЬНЫЙ) --- */
 @media (orientation: landscape) {
   #ui-layer { flex-direction: row; }
   
@@ -385,49 +385,66 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--primary); 
       padding: 12px !important;
   }
 
-  /* 1. ИСПРАВЛЕНИЕ: КНОПКИ ВВЕРХ / ВНИЗ (Настройка яруса) */
-  /* Делаем их компактными и в одну строку, чтобы не занимали весь экран */
+  /* 1. КНОПКИ ВВЕРХ / ВНИЗ (Два ряда, небольшие) */
   .bottom-sheet .btn-full {
-      width: 48% !important; /* Две кнопки в ряд */
-      display: inline-flex !important;
-      margin: 4px 1% !important;
-      min-height: 36px !important;
-      height: 36px !important;
+      width: 140px !important; /* Ограничиваем ширину */
+      margin: 5px auto !important; /* Центрируем и ставим друг под друга */
+      display: flex !important;
+      min-height: 34px !important;
+      height: 34px !important;
       font-size: 12px !important;
+      padding: 0 10px !important;
   }
 
-  /* 2. ИСПРАВЛЕНИЕ: ВЫРАВНИВАНИЕ (Декор - "Выпрямить" и "Центр") */
-  /* Здесь кнопки должны быть широкими, чтобы влез текст */
+  /* 2. СТЕППЕРЫ (Размеры и вес в одну колонку) */
+  .bottom-sheet .control-grid-2 {
+      display: flex !important;
+      flex-direction: column !important; /* Строго в один столбик */
+      gap: 12px !important;
+      margin-bottom: 15px !important;
+  }
+
+  .bottom-sheet .stepper {
+      width: 100% !important;
+      height: 38px !important;
+      justify-content: space-between !important;
+  }
+
+  .bottom-sheet .stepper button {
+      width: 40px !important;
+      min-width: 40px !important;
+      height: 38px !important;
+  }
+
+  /* 3. ДЕКОР: ВЫПРЯМИТЬ (Увеличиваем ширину еще сильнее) */
   .bottom-sheet .btn-grid {
       display: flex !important;
       flex-wrap: wrap !important;
       justify-content: center !important;
-      gap: 6px !important;
+      gap: 8px !important;
       width: 100% !important;
   }
 
   .bottom-sheet .btn-grid button {
-      min-width: 90px !important; /* Увеличено для "Выпрямить" */
-      min-height: 40px !important;
-      padding: 4px !important;
+      min-width: 110px !important; /* Увеличено до 110px, чтобы влезло "Выпрямить" */
+      min-height: 44px !important;
+      padding: 5px 10px !important;
       font-size: 11px !important;
-      line-height: 1.1 !important;
-      white-space: normal !important;
-      word-wrap: break-word !important;
+      line-height: 1.2 !important;
+      white-space: normal !important; /* Разрешаем перенос */
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
       text-align: center !important;
   }
 
-  /* Исключение для кнопок камер (F, L, R, T) во вкладке Вид */
+  /* Кнопки камер (F, L, R, T) - оставляем компактными */
   .bottom-sheet .btn-grid[style*="1fr 1fr 1fr 1fr"] button {
-      min-width: 55px !important;
-      height: 44px !important;
+      min-width: 50px !important;
+      height: 50px !important;
   }
 
-  /* 3. КАРУСЕЛИ (Формы яруса) */
-  /* Полоска остается, но уменьшаем отступы */
+  /* 4. КАРУСЕЛИ (Формы яруса) */
   .bottom-sheet .chip-scroll {
       display: block !important;
       white-space: nowrap !important;
@@ -438,32 +455,13 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--primary); 
   .bottom-sheet .chip-scroll::-webkit-scrollbar { height: 6px !important; display: block !important; }
   .bottom-sheet .chip-scroll::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
 
-  /* 4. РЕГУЛИРОВКА РАЗМЕРОВ (Размер, Вес) */
-  /* Чтобы не убегало за экран, делаем степперы компактнее */
-  .bottom-sheet .control-grid-2 {
-      display: grid !important;
-      grid-template-columns: 1fr 1fr !important; /* Возвращаем в 2 колонки */
-      gap: 10px !important;
-      margin-bottom: 10px !important;
-  }
-
-  .bottom-sheet .stepper {
-      height: 34px !important;
-  }
-
-  .bottom-sheet .stepper button {
-      width: 34px !important;
-      min-width: 34px !important;
-  }
-
   /* 5. КНОПКА ЗАГРУЗИТЬ */
   .bottom-sheet .texture-upload-btn {
       min-height: 60px !important;
-      padding: 8px !important;
       flex-direction: column !important;
   }
 
-  /* 6. ДЖОЙСТИК */
+  /* 6. ДЖОЙСТИК (Центрирование) */
   .bottom-sheet div[style*="grid-template-columns"] {
       display: grid !important;
       justify-content: center !important;
