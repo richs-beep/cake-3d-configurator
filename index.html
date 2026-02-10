@@ -9,6 +9,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
+
+  input[type=number]:focus {
+  background-color: #fff4f9; /* Легкий розовый оттенок при фокусе */
+  border-color: var(--primary);
+}
+  
 /* --- 1. GLOBAL STYLES --- */
 :root {
   --primary: #ec4899; --primary-active: #db2777;
@@ -1645,7 +1651,7 @@ function mkStepper(lbl, val, onInp, onDec, onInc) {
               <label class="control-label">${lbl}</label>
               <div class="stepper">
                 <button onpointerdown="vibro('medium'); startHold('${safeDec}')" onpointerup="stopHold()" onpointerleave="stopHold()">-</button>
-                <input type="number" value="${val}" oninput="${onInp}">
+                <input type="number" value="${val}" oninput="${onInp}" onclick="this.select()" onfocus="this.select()">
                 <button onpointerdown="vibro('medium'); startHold('${safeInc}')" onpointerup="stopHold()" onpointerleave="stopHold()">+</button>
               </div>
             </div>`;
@@ -1664,6 +1670,17 @@ function renderCompareTable() {
         c.innerHTML += colHtml;
     });
 }
+
+  // Добавьте это в любое место основного <script>
+document.addEventListener('focus', function(e) {
+    if (e.target && e.target.tagName === 'INPUT' && e.target.type === 'number') {
+        // Небольшая задержка помогает мобильным браузерам "победить" стандартное поведение курсора
+        setTimeout(() => {
+            e.target.select();
+            e.target.setSelectionRange(0, 9999);
+        }, 10);
+    }
+}, true);
 
 // Ввод вручную (Ярусы)
 function updateTierProp(key, val) {
