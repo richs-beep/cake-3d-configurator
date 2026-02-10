@@ -218,17 +218,65 @@ input[type=number] { -moz-appearance: textfield; }
 .cmp-tier { padding: 4px; background: #f9f9f9; border-radius: 4px; margin-bottom: 4px; }
 
 /* BOTTOM SHEET */
+/* --- НОВАЯ ШТОРКА (GLASSMORPHISM + DRAG) --- */
+/* --- НОВАЯ ШТОРКА (ЧЕТКАЯ ПРОЗРАЧНОСТЬ + DRAG) --- */
 .bottom-sheet {
-  position: absolute; bottom: 0; left: 0; width: 100%; max-height: 60vh;
-  background: var(--bg-ui); border-radius: 20px 20px 0 0; box-shadow: 0 -5px 30px rgba(0,0,0,0.15);
-  transform: translateY(110%); transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-  display: flex; flex-direction: column; pointer-events: auto; z-index: 20;
+  position: absolute; bottom: 0; left: 0; width: 100%;
+  height: 40vh; /* Начальная высота */
+  min-height: 15vh; max-height: 95vh;
+
+  /* ИЗМЕНЕНИЕ: Убрали размытие, сделали фон чуть плотнее */
+  background: rgba(255, 255, 255, 0.60) !important;
+  /* backdrop-filter: blur(12px); Нам не нужно размытие */
+  /* -webkit-backdrop-filter: blur(12px); */
+
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -5px 30px rgba(0,0,0,0.15);
+  
+  /* Тонкая белая линия сверху для четкой границы */
+  border-top: 1px solid rgba(255,255,255,0.9);
+
+  display: flex; flex-direction: column;
+  pointer-events: auto; z-index: 20;
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  will-change: height, transform;
 }
-.bottom-sheet.open { transform: translateY(0); }
-.sheet-header { padding: 12px 16px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
+/* Класс для скрытия шторки вниз */
+.bottom-sheet.hidden-sheet { transform: translateY(110%); }
+
+/* Ручка для перетаскивания */
+.sheet-handle-area {
+  width: 100%; padding: 12px 0 8px 0;
+  display: flex; justify-content: center; align-items: center;
+  cursor: grab; touch-action: none; flex-shrink: 0;
+}
+.sheet-handle-bar {
+  width: 40px; height: 5px; background: #ccc; border-radius: 10px;
+}
+
+.sheet-header { 
+  padding: 0 16px 10px 16px; 
+  border-bottom: 1px solid rgba(0,0,0,0.05); 
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; 
+}
 .sheet-title { font-weight: 700; font-size: 16px; }
-.sheet-content { padding: 16px; overflow-y: auto; overflow-x: hidden; padding-bottom: 40px; }
-.back-btn { background: #f3f4f6; border: none; border-radius: 8px; padding: 6px 12px; font-weight: 600; font-size: 13px; color: #333; }
+.sheet-content { 
+  padding: 16px; overflow-y: auto; overflow-x: hidden; 
+  flex: 1; padding-bottom: 80px; 
+}
+.back-btn { 
+  background: rgba(0,0,0,0.05); border: none; border-radius: 8px; 
+  padding: 6px 12px; font-weight: 600; font-size: 13px; color: #333; 
+}
+
+/* --- СЕТКА 2x2 ДЛЯ ПАРАМЕТРОВ --- */
+.control-grid-2 {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;
+}
+.control-grid-2 .control-group { margin-bottom: 0 !important; }
+.control-grid-2 .control-label { 
+  font-size: 10px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+}
 
 /* CONTROLS */
 .control-group { margin-bottom: 16px; }
@@ -263,15 +311,96 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--primary); 
 .nav-icon { font-size: 24px; transition: 0.2s; }
 .nav-item.active { color: var(--primary); }
 
+
+  /* --- ГОРИЗОНТАЛЬНЫЕ ЧИПСЫ (CHIPS) --- */
+.chip-scroll {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px; /* Место для тени */
+    margin-bottom: 12px;
+    scrollbar-width: none; /* Скрываем скроллбар (Firefox) */
+    -ms-overflow-style: none; /* Скрываем скроллбар (IE/Edge) */
+    
+    /* Инерция скролла для iOS - чтобы летало плавно */
+    -webkit-overflow-scrolling: touch; 
+}
+/* Скрываем скроллбар (Chrome/Safari) */
+.chip-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.chip-btn {
+    flex-shrink: 0; /* Не сжимать кнопки */
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 20px; /* Овальная форма */
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+/* Активное состояние */
+.chip-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(236, 72, 153, 0.4);
+}
+
+/* Нажатие */
+.chip-btn:active {
+    transform: scale(0.95);
+}
+
+/* --- ЛАНДШАФТНЫЙ РЕЖИМ (ГОРИЗОНТАЛЬНЫЙ) --- */
 @media (orientation: landscape) {
   #ui-layer { flex-direction: row; }
-  .toolbar { width: 70px; height: 100%; flex-direction: column; justify-content: center; border-top: none; border-left: 1px solid #eee; order: 2; padding: 0; }
-  .toolbar.hidden { transform: translateX(100%); }
-  .bottom-sheet { left: auto; right: 0; bottom: 0; top: 0; width: 320px; height: 100%; max-height: 100%; border-radius: 0; border-left: 1px solid #eee; transform: translateX(110%); }
-  .bottom-sheet.open { transform: translateX(0); }
-  .top-bar { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: auto; }
-  .top-tools { top: 10px; right: 80px; }
-  #compare-overlay { left: 20px; top: 60px; }
+  
+  /* Боковая панель навигации (слева) */
+  .toolbar { 
+      width: 70px; height: 100%; 
+      flex-direction: column; justify-content: center; 
+      border-top: none; border-left: none; border-right: 1px solid #eee; 
+      order: 1; padding: 0; 
+  }
+  .toolbar.hidden { transform: translateX(-100%); }
+  
+  /* Шторка превращается в Боковую панель (справа) */
+  .bottom-sheet { 
+      left: auto; right: 0; bottom: 0; top: 0; 
+      width: 320px; 
+      height: 100% !important;     /* Игнорируем JS-высоту */
+      max-height: 100% !important; 
+      min-height: 100% !important;
+      
+      border-radius: 0; border-left: 1px solid #eee; border-top: none;
+      
+      /* Позиция по умолчанию (Открыто) */
+      transform: translateX(0); 
+  }
+  
+  /* Скрытое состояние для боковой панели (Уезжает вправо) */
+  .bottom-sheet.hidden-sheet { 
+      transform: translateX(100%) !important; /* Перебиваем translateY */
+  }
+  
+  /* Скрываем ручку, так как тянуть нельзя */
+  .sheet-handle-area { display: none; }
+  
+  /* Верхний бар */
+  .top-bar { 
+      position: absolute; top: 0; left: 50%; 
+      transform: translateX(-50%); width: auto; 
+  }
+  .top-tools { top: 10px; right: 340px; } /* Сдвигаем левее, чтобы не наехать на панель */
+  
+  #compare-overlay { left: 80px; top: 20px; }
 }
 /* --- МОБИЛЬНАЯ ОПТИМИЗАЦИЯ (Крупные кнопки снизу) --- */
     @media (max-width: 800px) {
@@ -288,11 +417,8 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--primary); 
             font-size: 22px !important;       /* Крупный знак */
         }
 
-        #bottom-sheet {
-            height: 30vh !important;      /* 30% от высоты экрана */
-            max-height: 30vh !important;  /* Не больше 30% */
-            min-height: 30vh !important;  /* Не меньше 30% */
-        }
+        
+
         
         /* 3. Чуть увеличиваем заголовки полей */
         .control-label {
@@ -370,6 +496,56 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--primary); 
     white-space: nowrap;
     transform: translate(-50%, -150%); /* Чтобы палец не закрывал цифры */
 }
+
+
+  /* --- ИСПРАВЛЕНИЕ ДЛЯ СЕТКИ НА ТЕЛЕФОНАХ (FINAL) --- */
+@media (max-width: 800px) {
+    /* 1. Сжимаем сетку */
+    .control-grid-2 {
+        gap: 8px !important; /* Расстояние между колонками */
+    }
+
+    /* 2. Агрессивно уменьшаем кнопки +/- */
+    .control-grid-2 .stepper button {
+        width: 30px !important;       /* Узкие кнопки */
+        min-width: 30px !important;   /* Запрещаем расширяться */
+        height: 30px !important;      
+        min-height: 30px !important;  /* СБРОС глобального стиля */
+        font-size: 18px !important;
+        padding: 0 !important;        /* Убираем внутренние отступы */
+        line-height: 1 !important;    /* Центрируем плюс/минус */
+    }
+    
+    /* 3. Агрессивно уменьшаем поле ввода */
+    .control-grid-2 .stepper input {
+        width: 100% !important;       /* Растягиваем, но... */
+        min-width: 0 !important;      /* ...разрешаем сжиматься, если тесно */
+        height: 30px !important;
+        min-height: 30px !important;  /* ВАЖНО: СБРОС глобального стиля 48px */
+        font-size: 13px !important;
+        padding: 0 2px !important;    /* Минимальные отступы внутри */
+    }
+    
+    /* 4. Поджимаем саму строку степпера */
+    .control-grid-2 .stepper {
+        height: 30px !important;      /* Общая высота строки */
+        min-height: 30px !important;
+        gap: 4px !important;          /* Зазор между кнопкой и полем */
+    }
+
+    /* 5. Уменьшаем заголовок, чтобы не занимал много места */
+    .control-grid-2 .control-label {
+        font-size: 10px !important;
+        margin-bottom: 2px !important;
+    }
+    
+    /* 6. Уменьшаем отступы вокруг самой сетки */
+    .control-grid-2 .control-group {
+        margin-bottom: 0 !important;
+    }
+}
+
+  
 </style>
 </head>
 <body>
@@ -407,13 +583,17 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--primary); 
       </div>
     </div>
 
-    <div id="bottom-sheet" class="bottom-sheet">
-       <div class="sheet-header">
-         <div class="sheet-title" id="sheet-title">⚙️ Настройки</div>
-         <button class="back-btn" onclick="closeSheet()">▼ Скрыть</button>
-       </div>
-       <div class="sheet-content" id="sheet-content"></div>
-    </div>
+    <div id="bottom-sheet" class="bottom-sheet hidden-sheet">
+   <div class="sheet-handle-area" id="sheet-drag-handle">
+       <div class="sheet-handle-bar"></div>
+   </div>
+   
+   <div class="sheet-header">
+     <div class="sheet-title" id="sheet-title">⚙️ Настройки</div>
+     <button class="back-btn" onclick="closeSheet()">Закрыть</button>
+   </div>
+   <div class="sheet-content" id="sheet-content"></div>
+</div>
 
     <div class="toolbar" id="main-toolbar">
       <button class="nav-item" onclick="openMenu('structure')"><span class="nav-icon">🏗</span><span>Форма</span></button>
@@ -924,45 +1104,53 @@ function rebuildScene() {
 
 /* --- 3. UI GENERATION --- */
 function openMenu(menuName, scrollTarget) {
-    // --- 1. ЗАПОМИНАЕМ ТЕКУЩИЙ СКРОЛЛ (ЧТОБЫ НЕ СКАКАЛО) ---
+
+  if(menuName !== ui.activeMenu) vibro('light');
+    // --- 1. ЗАПОМИНАЕМ ТЕКУЩИЙ СКРОЛЛ ---
     let savedScroll = 0;
     let wasDecorListOpen = false;
     const oldList = document.getElementById('decor-list-box');
     
-    // Если список декора уже открыт, запоминаем, где мы находились
     if (oldList) {
         savedScroll = oldList.scrollTop;
         wasDecorListOpen = true;
     }
-    // -------------------------------------------------------
 
     ui.activeMenu = menuName;
     const sheet = document.getElementById('bottom-sheet');
     const content = document.getElementById('sheet-content');
     const title = document.getElementById('sheet-title');
+    
+    // !!! ГЛАВНОЕ ИЗМЕНЕНИЕ: Открываем шторку (убираем класс скрытия) !!!
+    sheet.classList.remove('hidden-sheet');
+
     let html = '';
   
+    // Логика перенаправления
     if (menuName === 'structure' && ui.selTier !== null) {
         menuName = 'structure_edit';
     }
+
+    // --- МЕНЮ: СТРУКТУРА (СПИСОК) ---
     if (menuName === 'structure') {
         title.innerHTML = '🏗 Структура';
         html += `<button class="btn-full" onclick="actionAddTier()">+ Добавить Ярус</button>`;
         const targetName = (activeCakeId === 0) ? 'B' : 'A';
         html += `<button class="btn-sec" style="margin-top:10px; width:100%" onclick="copyCakeToOther()">📋 Скопировать в Торт ${targetName}</button>`;
+        
         if(getActiveTiers().length > 0) {
              html += `<div class="control-label" style="margin-top:16px">Редактировать ярус:</div>`;
              getActiveTiers().forEach((t, i) => {
                  html += `<button class="btn-sec" style="margin-bottom:6px" onclick="selectAndEditTier(${i})">Ярус ${i+1} (${getShapeName(t.shape)})</button>`;
              });
         }
+
+    // --- МЕНЮ: РЕДАКТИРОВАНИЕ ЯРУСА (СЕТКА 2x2) ---
     } else if (menuName === 'structure_edit') {
         const tiers = getActiveTiers();
-        
-        // Если ярус не выбран ИЛИ индекс сломался -> выкидываем в главное меню
         if (ui.selTier === null || !tiers[ui.selTier]) {
-            openMenu('structure'); // Переключаем на общий список
-            return; // Останавливаем выполнение, чтобы не было ошибки
+            openMenu('structure');
+            return;
         }
         
         const t = tiers[ui.selTier];
@@ -970,69 +1158,94 @@ function openMenu(menuName, scrollTarget) {
         
         const dimStr = (t.shape==='box') ? `${t.d/10}x${t.d/10}` : (t.shape==='parallelepiped' ? `${t.w/10}x${t.dep/10}` : `Ø${t.d/10}`);
         const hStr = (t.shape==='sphere') ? `${t.d/10}` : `${t.h/10}`;
-        html += `<div class="tier-summary-box"><strong>Инфо:</strong> ${dimStr} см | h ${hStr} см<br>⚖️ ${t.weight || 0} кг | 🎂 ${t.filling || 'Без начинки'}</div>`;
+        
+        html += `<div class="tier-summary-box"><strong>Инфо:</strong> ${dimStr} см | h ${hStr} см<br>⚖️ ${t.weight || 0} кг | 🎂 ${t.filling || 'Нет'}</div>`;
 
-        html += `<div class="control-group"><label class="control-label">Позиция</label><div class="btn-grid"><button class="btn-sec" onclick="moveTier(1)">▲ Вверх</button><button class="btn-sec" onclick="moveTier(-1)">▼ Вниз</button></div></div>`;
-        html += `<div class="control-group"><label class="control-label">Форма</label>
-                 <select class="btn-sec" style="width:100%" onchange="updateTierProp('shape', this.value)">
-                    <option value="cylinder" ${t.shape=='cylinder'?'selected':''}>Цилиндр</option><option value="box" ${t.shape=='box'?'selected':''}>Куб</option><option value="parallelepiped" ${t.shape=='parallelepiped'?'selected':''}>Параллелепипед</option><option value="sphere" ${t.shape=='sphere'?'selected':''}>Шар</option><option value="ngon" ${t.shape=='ngon'?'selected':''}>Многоугольник</option><option value="heart" ${t.shape=='heart'?'selected':''}>Сердце</option><option value="star" ${t.shape=='star'?'selected':''}>Звезда</option>
-                 </select></div>`;
+        // Кнопки Вверх/Вниз
+        html += `<div class="control-group"><div class="btn-grid"><button class="btn-sec" onclick="moveTier(1)">▲ Вверх</button><button class="btn-sec" onclick="moveTier(-1)">▼ Вниз</button></div></div>`;
+        
+        // Выбор формы
+        // --- ЗАМЕНА SELECT НА CHIPS (Вставляем сюда) ---
+        const shapes = [
+            {val:'cylinder', label:'Цилиндр', icon:'⚪'},
+            {val:'box', label:'Куб', icon:'📦'},
+            {val:'parallelepiped', label:'Прямоуг.', icon:'▭'},
+            {val:'sphere', label:'Шар', icon:'🔮'},
+            {val:'heart', label:'Сердце', icon:'❤️'},
+            {val:'star', label:'Звезда', icon:'⭐'},
+            {val:'ngon', label:'Многоуг.', icon:'🔷'}
+        ];
+
+        // Генерируем ленту:
+        html += mkSelector('Форма яруса', t.shape, shapes, "updateTierProp('shape', '__VAL__')");
                  
+        // === СЕТКА ПАРАМЕТРОВ (GRID) ===
+        html += `<div class="control-grid-2">`;
+        
+        // 1. Ширина / Размер
         if(t.shape === 'parallelepiped') { 
             html += mkStepper('Ширина', t.w || 200, "updateTierProp('w', this.value)", "stepProp('w', -1)", "stepProp('w', 1)"); 
-            html += mkStepper('Глубина', t.dep || 200, "updateTierProp('dep', this.value)", "stepProp('dep', -1)", "stepProp('dep', 1)"); 
         } else { 
-            html += mkStepper('Размер/Диаметр', t.d, "updateTierProp('d', this.value)", "stepProp('d', -1)", "stepProp('d', 1)"); 
+            html += mkStepper('Размер', t.d, "updateTierProp('d', this.value)", "stepProp('d', -1)", "stepProp('d', 1)"); 
         }
-        if(t.shape !== 'sphere') html += mkStepper('Высота', t.h, "updateTierProp('h', this.value)", "stepProp('h', -1)", "stepProp('h', 1)");
-        if(t.shape === 'ngon') html += mkStepper('Кол-во углов', t.n || 6, "updateTierProp('n', this.value)", "stepProp('n', -1)", "stepProp('n', 1)");
-        
-        html += `<div class="control-group"><label class="control-label">Вес (кг)</label><div class="stepper"><button onclick="stepProp('weight', -0.1)">-</button><input type="number" value="${t.weight||0}" step="0.1" oninput="updateTierProp('weight', this.value)"><button onclick="stepProp('weight', 0.1)">+</button></div></div>`;
+
+        // 2. Глубина / Высота
+        if(t.shape === 'sphere') {
+             html += `<div style="display:flex;align-items:center;justify-content:center;color:#999;font-size:10px">(Симметрия)</div>`;
+        } else if (t.shape === 'parallelepiped') {
+             html += mkStepper('Глубина', t.dep || 200, "updateTierProp('dep', this.value)", "stepProp('dep', -1)", "stepProp('dep', 1)");
+        } else {
+             html += mkStepper('Высота', t.h, "updateTierProp('h', this.value)", "stepProp('h', -1)", "stepProp('h', 1)");
+        }
+        html += `</div>`; // Конец строки 1
+
+        // Строка 2 (если нужна высота для прямоугольника или углы)
+        if (t.shape === 'parallelepiped' || t.shape === 'ngon') {
+             html += `<div class="control-grid-2">`;
+             if (t.shape === 'parallelepiped') {
+                 html += mkStepper('Высота', t.h, "updateTierProp('h', this.value)", "stepProp('h', -1)", "stepProp('h', 1)");
+             } else {
+                 html += mkStepper('Углы', t.n || 6, "updateTierProp('n', this.value)", "stepProp('n', -1)", "stepProp('n', 1)");
+             }
+             html += mkStepper('Вес (кг)', t.weight||0, "updateTierProp('weight', this.value)", "stepProp('weight', -0.1)", "stepProp('weight', 0.1)");
+             html += `</div>`;
+        } else {
+             // Просто вес отдельно, если строки 2 нет
+             html += `<div class="control-group"><label class="control-label">Вес (кг)</label><div class="stepper"><button onclick="stepProp('weight', -0.1)">-</button><input type="number" value="${t.weight||0}" step="0.1" oninput="updateTierProp('weight', this.value)"><button onclick="stepProp('weight', 0.1)">+</button></div></div>`;
+        }
+
+        // Начинка
         html += `<div class="control-group"><label class="control-label">Начинка</label><input type="text" class="btn-sec" style="width:100%" value="${t.filling||''}" onchange="updateTierProp('filling', this.value)"></div>`;
-        // --- ВСТАВИТЬ ЭТОТ БЛОК (НАСТРОЙКИ ПОДЛОЖКИ) ---
-        // Показываем настройки подложки только для нижнего яруса (index 0)
+
+        // Подложка (только низ)
         if (ui.selTier === 0) {
             const b = t.board || { enabled: false, color: '#FFD700', thickness: 3, offset: 20 };
-            
             html += `<hr style="border:0; border-top:1px solid #eee; margin:16px 0">`;
             html += `<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px">
                         <label class="control-label" style="margin:0">🥯 Подложка</label>
-                        <input type="checkbox" ${b.enabled ? 'checked' : ''} 
-                               onchange="toggleBoard(this.checked)" style="width:20px; height:20px; accent-color:#ec4899">
+                        <input type="checkbox" ${b.enabled ? 'checked' : ''} onchange="toggleBoard(this.checked)" style="width:20px; height:20px; accent-color:#ec4899">
                      </div>`;
-            
             if (b.enabled) {
                 html += `<div style="background:#fff; padding:10px; border-radius:10px; border:1px solid #ddd">
-                            
                             <div style="display:flex; align-items:center; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid #eee">
-                                <input type="checkbox" id="board-round" ${(b.isRound!==false)?'checked':''} 
-                                       onchange="updateBoardProp('isRound', this.checked)"
-                                       style="width:18px; height:18px; accent-color:#ec4899">
-                                <label for="board-round" style="margin-left:8px; font-weight:600; font-size:13px; color:#333">
-                                    Всегда круглая
-                                </label>
+                                <input type="checkbox" id="board-round" ${(b.isRound!==false)?'checked':''} onchange="updateBoardProp('isRound', this.checked)" style="width:18px; height:18px; accent-color:#ec4899">
+                                <label for="board-round" style="margin-left:8px; font-weight:600; font-size:13px; color:#333">Всегда круглая</label>
                             </div>
-
                             <div style="display:flex; gap:8px; margin-bottom:8px; align-items:center">
                                 <input type="color" value="${b.color}" onchange="updateBoardProp('color', this.value)" style="border:none; width:40px; height:30px">
                                 <span style="font-size:12px">Цвет подложки</span>
                             </div>
-                            
-                            ${mkStepper('Толщина (мм)', b.thickness, 
-                                "updateBoardProp('thickness', this.value)", 
-                                "stepBoardProp('thickness', -1)", 
-                                "stepBoardProp('thickness', 1)")}
-                                
-                            ${mkStepper('Увеличить размер (мм)', b.offset, 
-                                "updateBoardProp('offset', this.value)", 
-                                "stepBoardProp('offset', -5)", 
-                                "stepBoardProp('offset', 5)")}
+                            <div class="control-grid-2">
+                                ${mkStepper('Толщина', b.thickness, "updateBoardProp('thickness', this.value)", "stepBoardProp('thickness', -1)", "stepBoardProp('thickness', 1)")}
+                                ${mkStepper('Отступ', b.offset, "updateBoardProp('offset', this.value)", "stepBoardProp('offset', -5)", "stepBoardProp('offset', 5)")}
+                            </div>
                          </div>`;
             }
         }
-        // --- КОНЕЦ БЛОКА ---
+        
         html += `<div class="btn-grid" style="margin-top:20px"><button class="btn-sec" onclick="duplicateTier()">Копия</button><button class="btn-sec" style="color:red; border-color:red" onclick="removeTier()">Удалить</button></div>`;
-                 
+                  
+    // --- МЕНЮ: ЦВЕТ ---
     } else if (menuName === 'color') {
         if(ui.selTier === null) html = '<p style="color:#999; text-align:center">Выберите ярус</p>';
         else {
@@ -1043,16 +1256,16 @@ function openMenu(menuName, scrollTarget) {
             if (ui.colorTab === 'solid') {
                 html += `<div class="control-group"><label class="control-label">Покрытие</label>
                 <select class="btn-sec" style="width:100%; margin-bottom:12px" onchange="updateTierProp('coating', this.value)">
-                    <option value="cream" ${t.coating==='cream'?'selected':''}>🍰 Крем-чиз (Стандарт)</option>
-                    <option value="velvet" ${t.coating==='velvet'?'selected':''}>☁️ Велюр (Шершавый)</option>
-                    <option value="mastic" ${t.coating==='mastic'?'selected':''}>🍬 Мастика (Гладкая)</option>
-                    <option value="mirror" ${t.coating==='mirror'?'selected':''}>✨ Зеркальная глазурь</option>
+                    <option value="cream" ${t.coating==='cream'?'selected':''}>🍰 Крем-чиз</option>
+                    <option value="velvet" ${t.coating==='velvet'?'selected':''}>☁️ Велюр</option>
+                    <option value="mastic" ${t.coating==='mastic'?'selected':''}>🍬 Мастика</option>
+                    <option value="mirror" ${t.coating==='mirror'?'selected':''}>✨ Зеркальная</option>
                 </select></div>`;
                 
-                html += `<input type="color" style="width:100%; height:60px; border:none; border-radius:10px; margin-bottom:16px" value="${t.color}" oninput="previewTierColor(this.value)" onchange="updateTierProp('color', this.value)">`;
+                html += `<input type="color" style="width:100%; height:50px; border:none; border-radius:10px; margin-bottom:16px" value="${t.color}" oninput="previewTierColor(this.value)" onchange="updateTierProp('color', this.value)">`;
                 html += `<div class="palette">${['#ffffff','#ec4899','#fcd34d','#60a5fa','#34d399','#a78bfa'].map(c => `<div class="swatch" style="background:${c}" onclick="updateTierProp('color', '${c}')"></div>`).join('')}</div>`;
                 
-                // --- НАСТРОЙКА ПОДТЕКОВ ---
+                // Подтеки
                 if(t.shape === 'cylinder' || t.shape === 'box' || t.shape === 'parallelepiped') {
                     const dr = t.drips || { enabled: false, color: '#3e2723', len: 40, freq: 12 };
                     html += `<hr style="border:0; border-top:1px solid #eee; margin:16px 0">`;
@@ -1060,97 +1273,93 @@ function openMenu(menuName, scrollTarget) {
                                 <label class="control-label" style="margin:0">🍫 Подтеки</label>
                                 <input type="checkbox" ${dr.enabled?'checked':''} onchange="toggleDrips(this.checked)" style="width:20px; height:20px">
                              </div>`;
-                    
                     if(dr.enabled) {
                         html += `<div style="background:#fff; padding:10px; border-radius:10px; border:1px solid #ddd">
                                     <div style="display:flex; gap:8px; margin-bottom:8px; align-items:center">
                                         <input type="color" value="${dr.color}" onchange="updateDrips('color', this.value)" style="border:none; width:40px; height:30px">
                                         <span style="font-size:12px">Цвет глазури</span>
                                     </div>
-                                    ${mkStepper('Длина капель', dr.len, "updateDrips('len', this.value)", "stepDrips('len', -5)", "stepDrips('len', 5)")}
-                                    ${mkStepper('Частота', dr.freq, "updateDrips('freq', this.value)", "stepDrips('freq', -1)", "stepDrips('freq', 1)")}
+                                    <div class="control-grid-2">
+                                        ${mkStepper('Длина', dr.len, "updateDrips('len', this.value)", "stepDrips('len', -5)", "stepDrips('len', 5)")}
+                                        ${mkStepper('Частота', dr.freq, "updateDrips('freq', this.value)", "stepDrips('freq', -1)", "stepDrips('freq', 1)")}
+                                    </div>
                                  </div>`;
                     }
                 } else {
-                    html += `<div style="font-size:11px; color:#999; margin-top:10px">⚠️ Подтеки доступны только для Цилиндра</div>`;
+                    html += `<div style="font-size:11px; color:#999; margin-top:10px">⚠️ Подтеки доступны только для Цилиндра/Куба</div>`;
                 }
 
             } else {
+                // Текстуры
                 if(!t.tex) t.tex = {side:defaultTex(), top:defaultTex(), bottom:defaultTex()}; 
                 const p = ui.activeTexPart; const texData = t.tex[p]; const hasTex = !!texData.url;
                 
                 html += `<div class="control-group"><label class="control-label">Зона</label><select class="btn-sec" style="width:100%" onchange="setTexPart(this.value)"><option value="side" ${p==='side'?'selected':''}>Бок</option><option value="top" ${p==='top'?'selected':''}>Верх</option><option value="bottom" ${p==='bottom'?'selected':''}>Низ</option></select></div>`;
                 html += `<div class="btn-grid" style="margin-bottom:16px"><button class="btn-sec" onclick="document.getElementById('tex-upl').click()">📂 Загрузить</button>${hasTex ? `<button class="btn-sec" style="color:red" onclick="clearTexture()">❌ Удалить</button>` : ''}</div><input type="file" id="tex-upl" style="display:none" onchange="handleTextureUpload(this)">`;
+                
                 if (hasTex) {
                     html += `<div class="control-group" style="display:flex; align-items:center; gap:8px; margin-bottom:12px; background:#fff; padding:8px; border-radius:8px; border:1px solid #ddd;">
                                 <input type="checkbox" id="tex-mix" ${texData.mixColor ? 'checked' : ''} onchange="updateTexProp('mixColor', this.checked)">
                                 <label for="tex-mix" style="margin:0; font-weight:600; font-size:13px">Наложить цвет яруса (Tint)</label>
                              </div>`;
-
-                    html += `<div class="control-group"><label class="control-label">Режим</label><select class="btn-sec" style="width:100%" onchange="updateTexProp('mode', this.value)"><option value="tile" ${texData.mode==='tile'?'selected':''}>Плитка (Повтор)</option><option value="fit" ${texData.mode==='fit'?'selected':''}>Растянуть</option></select></div>`;
-                    html += mkStepper('Масштаб', texData.scale, "updateTexProp('scale', this.value)", "stepTex('scale', -0.1)", "stepTex('scale', 0.1)");
-                    html += mkStepper('Поворот', texData.rot, "updateTexProp('rot', this.value)", "stepTex('rot', -5)", "stepTex('rot', 5)");
-                    html += mkStepper('Сдвиг X', texData.offX, "updateTexProp('offX', this.value)", "stepTex('offX', -0.05)", "stepTex('offX', 0.05)");
-                    html += mkStepper('Сдвиг Y', texData.offY, "updateTexProp('offY', this.value)", "stepTex('offY', -0.05)", "stepTex('offY', 0.05)");
+                    const texModes = [
+    {val:'tile', label:'Плитка (Повтор)', icon:'▦'},
+    {val:'fit', label:'Растянуть (Fit)', icon:'↔️'}
+];
+html += mkSelector('Режим наложения', texData.mode, texModes, "updateTexProp('mode', '__VAL__')");
+                    
+                    // Сетка настроек текстуры
+                    html += `<div class="control-grid-2">
+                        ${mkStepper('Масштаб', texData.scale, "updateTexProp('scale', this.value)", "stepTex('scale', -0.1)", "stepTex('scale', 0.1)")}
+                        ${mkStepper('Поворот', texData.rot, "updateTexProp('rot', this.value)", "stepTex('rot', -5)", "stepTex('rot', 5)")}
+                    </div>`;
+                    html += `<div class="control-grid-2">
+                        ${mkStepper('Сдвиг X', texData.offX, "updateTexProp('offX', this.value)", "stepTex('offX', -0.05)", "stepTex('offX', 0.05)")}
+                        ${mkStepper('Сдвиг Y', texData.offY, "updateTexProp('offY', this.value)", "stepTex('offY', -0.05)", "stepTex('offY', 0.05)")}
+                    </div>`;
                     if(texData.mode === 'tile') {
-                        html += mkStepper('Повтор X', texData.repX, "updateTexProp('repX', this.value)", "stepTex('repX', -0.5)", "stepTex('repX', 0.5)");
-                        html += mkStepper('Повтор Y', texData.repY, "updateTexProp('repY', this.value)", "stepTex('repY', -0.5)", "stepTex('repY', 0.5)");
+                        html += `<div class="control-grid-2">
+                            ${mkStepper('Повтор X', texData.repX, "updateTexProp('repX', this.value)", "stepTex('repX', -0.5)", "stepTex('repX', 0.5)")}
+                            ${mkStepper('Повтор Y', texData.repY, "updateTexProp('repY', this.value)", "stepTex('repY', -0.5)", "stepTex('repY', 0.5)")}
+                        </div>`;
                     }
                 } else { html += `<div style="text-align:center; padding:20px; color:#aaa; font-size:12px">Нет текстуры на этой части</div>`; }
             }
         }
-    }  else if (menuName === 'decor') {
-        title.innerHTML = '✨ Декор и Топперы';
+
+    // --- МЕНЮ: ДЕКОР ---
+    } else if (menuName === 'decor') {
+        title.innerHTML = '✨ Декор';
         if(ui.selTier === null) {
             html = '<p style="text-align:center">Выберите ярус</p>';
         } else {
             const t = getActiveTiers()[ui.selTier];
             
-            // --- 1. ЗАГОЛОВОК И КНОПКА МУЛЬТИ-ВЫБОРА (НОВОЕ) ---
+            // Заголовок и Мульти-выбор
             html += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px">
                         <div class="control-label" style="margin:0">Слои (${t.decor.length})</div>
-                        <button class="btn-sec" style="width:auto; padding:4px 12px; font-size:12px; ${isMultiSelect ? 'background:#ec4899; color:white; border-color:#ec4899' : ''}" 
-                                onclick="toggleMultiSelectMode()">
-                            ${isMultiSelect ? '✓ Готово' : '☑️ Выбрать несколько'}
+                        <button class="btn-sec" style="width:auto; padding:4px 12px; font-size:12px; ${isMultiSelect ? 'background:#ec4899; color:white; border-color:#ec4899' : ''}" onclick="toggleMultiSelectMode()">
+                            ${isMultiSelect ? '✓ Готово' : '☑️ Выбрать'}
                         </button>
                      </div>`;
-
-            // --- 2. СПИСОК СЛОЕВ (С ПОДДЕРЖКОЙ ГАЛОЧЕК) ---
-            // --- 2. СПИСОК СЛОЕВ (С ПОДДЕРЖКОЙ ГАЛОЧЕК) ---
-// ДОБАВИЛИ ID: decor-list-box
-html += `<div id="decor-list-box" style="max-height:150px; overflow-y:auto; background:#fff; border:1px solid #ddd; border-radius:8px; margin-bottom:12px;">`;
-            if(t.decor.length === 0) html += `<div style="padding:8px; color:#999; font-size:11px">Нет элементов</div>`;
             
-            // ... (предыдущий код: <div id="decor-list-box" ... )
-
+            // Список слоев
+            html += `<div id="decor-list-box" style="max-height:150px; overflow-y:auto; background:#fff; border:1px solid #ddd; border-radius:8px; margin-bottom:12px;">`;
+            if(t.decor.length === 0) html += `<div style="padding:8px; color:#999; font-size:11px">Нет элементов</div>`;
             t.decor.forEach((d, i) => {
-                // 1. ОПРЕДЕЛЯЕМ ИМЯ
-                let displayName = d.customName; // Сначала ищем ваше личное название
-                
+                let displayName = d.customName;
                 if (!displayName) {
-                    // Если вы ничего не вписали, генерируем стандартное
-                    if (d.isText) {
-                        displayName = '"' + d.textContent + '"';
-                    } else if (d.placement === 'volume' || d.placement === 'topper') {
-                        const names = { sphere: '⚪ Шар', cube: '📦 Куб', cylinder: '🕯 Свеча' };
-                        displayName = names[d.shape] || '3D Фигура';
-                    } else if (d.placement === 'topper') {
-                        displayName = '🚩 Топпер';
-                    } else if (d.placement === 'top') {
-                        displayName = '🖼 Картинка (Верх)';
-                    } else {
-                        displayName = '🖼 Стикер (Бок)';
-                    }
+                    if (d.isText) displayName = '"' + d.textContent + '"';
+                    else if (d.placement === 'volume' || d.placement === 'topper') displayName = (d.shape === 'sphere' ? '⚪ Шар' : (d.shape === 'cube'?'📦 Куб':'Фигура'));
+                    else if (d.placement === 'topper') displayName = '🚩 Топпер';
+                    else displayName = '🖼 Стикер';
                 }
-                
-                // Логика подсветки (оставляем как было)
                 const isSelected = isMultiSelect ? selectedDecors.includes(i) : (ui.selDecorIdx === i);
                 const bg = isSelected ? '#fce7f3' : '#fff';
                 const lockIcon = d.locked ? '🔒 ' : '';
                 const checkIcon = isMultiSelect ? (isSelected ? '☑️ ' : '⬜ ') : '';
                 const clickAction = isMultiSelect ? `toggleDecorSelection(${i})` : `selectDecor(${i})`;
-
-                // Вывод в HTML (используем displayName)
+                
                 html += `<div id="decor-item-${i}" onclick="${clickAction}" style="padding:8px; border-bottom:1px solid #eee; background:${bg}; font-size:12px; display:flex; justify-content:space-between; cursor:pointer; align-items:center">
                             <span>${checkIcon}${i+1}. ${lockIcon}${displayName}</span>
                             ${!isMultiSelect ? `<span style="color:red; padding:0 8px" onclick="event.stopPropagation(); removeDecor(${i})">✕</span>` : ''}
@@ -1158,60 +1367,31 @@ html += `<div id="decor-list-box" style="max-height:150px; overflow-y:auto; back
             });
             html += `</div>`;
 
-            // --- 3. ПЕРЕКЛЮЧАТЕЛЬ ИНТЕРФЕЙСА (ГРУППА или ОДИНОЧНЫЙ) ---
+            // Если режим ГРУППЫ
             if (isMultiSelect) {
-                 // === РЕЖИМ ГРУППОВЫХ ДЕЙСТВИЙ ===
-                 html += `<div class="control-label">Действия с группой (${selectedDecors.length})</div>
+                 html += `<div class="control-label">Действия с группой</div>
                           <div class="btn-grid" style="margin-bottom:16px">
                              <button class="btn-sec" onclick="groupAction('lock')">🔒 Закрепить</button>
                              <button class="btn-sec" onclick="groupAction('unlock')">🔓 Открепить</button>
                              <button class="btn-sec" style="color:red" onclick="groupAction('delete')">🗑 Удалить</button>
                              <button class="btn-sec" onclick="duplicateDecor()">📑 Копия</button>
                           </div>`;
-                 
                  // Джойстик для группы
                  if (selectedDecors.length > 0) {
-                     const btn = (icon, dir) => `<button class="btn-sec" onpointerdown="startMove('${dir}')" onpointerup="stopMove()" onpointerleave="stopMove()" style="touch-action:none; user-select:none;">${icon}</button>`;
-                     // --- НОВЫЙ КОМПАКТНЫЙ ДЖОЙСТИК ---
-                    // Вспомогательная функция для генерации маленькой круглой кнопки
-                    const miniBtn = (icon, dir) => 
-                        `<button class="btn-sec" onpointerdown="startMove('${dir}')" onpointerup="stopMove()" onpointerleave="stopMove()" 
-                          style="touch-action:none; user-select:none; width:44px; height:44px; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%; margin:0 auto; font-size:18px;">
-                          ${icon}
-                        </button>`;
-
-                    html += `<div class="control-label" style="text-align:center; margin-top:10px">Перемещение</div>
-                             
-                             <div style="display:grid; grid-template-columns: 44px 44px 44px; justify-content:center; gap:8px; margin-bottom:12px;">
-                                
-                                <div></div> 
-                                ${miniBtn('▲', 'up')} 
-                                <div></div>
-                                
-                                ${miniBtn('◀', 'left')} 
-                                <div style="display:flex; align-items:center; justify-content:center; font-size:10px; color:#ccc; font-weight:bold;">MOVE</div> 
-                                ${miniBtn('▶', 'right')}
-                                
-                                <div></div> 
-                                ${miniBtn('▼', 'down')} 
-                                <div></div>
-                             </div>
-
-                             <div style="display:flex; justify-content:center; gap:12px; margin-bottom:16px">
-                                <button class="btn-sec" onpointerdown="startMove('in')" onpointerup="stopMove()" onpointerleave="stopMove()" style="width:auto; padding:8px 16px; font-size:13px">↘ Вглубь</button>
-                                <button class="btn-sec" onpointerdown="startMove('out')" onpointerup="stopMove()" onpointerleave="stopMove()" style="width:auto; padding:8px 16px; font-size:13px">↖ Наружу</button>
-                             </div>`;
-                    
-                    // --- ДЕЙСТВИЯ (Оставляем как было) ---
-                    html += `<div class="control-label">Действия</div>
-                             <div class="btn-grid" style="grid-template-columns: 1fr 1fr; margin-bottom:16px">
-                                <button class="btn-sec" onclick="duplicateDecor()">📑 Копия</button>
-                                <button class="btn-sec" onclick="copyDecorToOther()">➡ В Торт ${activeCakeId===0?'B':'A'}</button>
-                             </div>`;
+                      const miniBtn = (icon, dir) => `<button class="btn-sec" onpointerdown="startMove('${dir}')" onpointerup="stopMove()" onpointerleave="stopMove()" style="width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;">${icon}</button>`;
+                      html += `<div class="control-label" style="text-align:center">Перемещение</div>
+                               <div style="display:grid; grid-template-columns: 40px 40px 40px; justify-content:center; gap:8px; margin-bottom:12px;">
+                                 <div></div> ${miniBtn('▲', 'up')} <div></div>
+                                 ${miniBtn('◀', 'left')} <div style="font-size:9px;display:flex;align-items:center;justify-content:center;">MOVE</div> ${miniBtn('▶', 'right')}
+                                 <div></div> ${miniBtn('▼', 'down')} <div></div>
+                               </div>
+                               <div style="display:flex; justify-content:center; gap:12px; margin-bottom:16px">
+                                 <button class="btn-sec" onpointerdown="startMove('in')" onpointerup="stopMove()" onpointerleave="stopMove()" style="width:auto; padding:8px; font-size:12px">↘ Вглубь</button>
+                                 <button class="btn-sec" onpointerdown="startMove('out')" onpointerup="stopMove()" onpointerleave="stopMove()" style="width:auto; padding:8px; font-size:12px">↖ Наружу</button>
+                               </div>`;
                  }
-
             } else {
-                // === ОБЫЧНЫЙ РЕЖИМ (ВСЕ ВАШИ СТАРЫЕ КНОПКИ) ===
+                // Если режим ОДИНОЧНЫЙ
                 html += `<div class="control-label">Добавить</div>
                          <div class="btn-grid" style="grid-template-columns:1fr 1fr 1fr; margin-bottom:16px">
                             <button class="btn-sec" onclick="promptAddDecor('side')">+ Бок</button>
@@ -1225,260 +1405,193 @@ html += `<div id="decor-list-box" style="max-height:150px; overflow-y:auto; back
                             <button class="btn-sec" onclick="addVolumeFigure('cylinder')">🕯 Свеча</button>
                          </div>`;
 
-                // Редактирование одиночного элемента (Ваш старый блок)
+                // Редактирование выбранного
                 if(ui.selDecorIdx !== null && t.decor[ui.selDecorIdx]) {
                     const d = t.decor[ui.selDecorIdx];
-                    const btn = (icon, dir) => `<button class="btn-sec" onpointerdown="startMove('${dir}')" onpointerup="stopMove()" onpointerleave="stopMove()" style="touch-action:none; user-select:none;">${icon}</button>`;
+                    const miniBtn = (icon, dir) => `<button class="btn-sec" onpointerdown="startMove('${dir}')" onpointerup="stopMove()" onpointerleave="stopMove()" style="width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;">${icon}</button>`;
 
                     html += `<div class="control-label">Редактирование</div>
-                             <div style="background:#f8f9fa; padding:10px; border-radius:12px; border:1px solid #eee">`;
-                             html += `<div class="control-label">Редактирование</div>
                              <div style="background:#f8f9fa; padding:10px; border-radius:12px; border:1px solid #eee">
-                             
-                             <div style="margin-bottom:12px">
-                                <label style="font-size:10px; font-weight:700; color:#888; text-transform:uppercase; margin-bottom:4px; display:block">Название</label>
-                                <input type="text" value="${d.customName || ''}" placeholder="Например: Красный бант" 
-                                       class="btn-sec" style="width:100%; font-size:14px; padding:8px; height:auto; min-height:36px" 
-                                       onchange="renameDecor(this.value)">
-                             </div>`;
-                             
-                    // ... (дальше идет Галочка закрепления и всё остальное) ...
+                                <div style="margin-bottom:12px">
+                                   <label style="font-size:10px; font-weight:700; color:#888; text-transform:uppercase; margin-bottom:4px; display:block">Название</label>
+                                   <input type="text" value="${d.customName || ''}" placeholder="Например: Бант" class="btn-sec" style="width:100%; font-size:14px; padding:8px;" onchange="renameDecor(this.value)">
+                                </div>`;
                     
-                    // Галочка закрепления (Исправленная)
+                    // Блокировка
                     html += `<div onclick="toggleDecorLock(!${d.locked})" style="margin-bottom:12px; background:#fff; padding:8px; border-radius:8px; border:1px solid ${d.locked ? '#ec4899' : '#ddd'}; display:flex; align-items:center; justify-content:space-between; cursor:pointer">
                                 <div style="display:flex; align-items:center">
                                     <span style="font-size:16px; margin-right:6px">${d.locked ? '🔒' : '🔓'}</span>
-                                    <span style="font-weight:600; font-size:13px; margin:0; color:#333">${d.locked ? 'Объект закреплен' : 'Закрепить объект'}</span>
+                                    <span style="font-weight:600; font-size:13px; margin:0; color:#333">${d.locked ? 'Закреплен' : 'Закрепить'}</span>
                                 </div>
                                 <input type="checkbox" ${d.locked ? 'checked' : ''} style="width:20px; height:20px; accent-color:#ec4899; pointer-events:none;">
-                             </div>
-                             ${d.locked ? '<div style="font-size:10px; color:#ec4899; margin-bottom:10px; text-align:center">ℹ️ Чтобы выбрать закрепленный объект, удерживайте на нем палец 1 секунду.</div>' : ''}`;
+                             </div>`;
 
-                    // --- ТОНАЛЬНОСТЬ КАРТИНКИ ---
-                    // Показываем только для картинок (не для текста и не для 3D фигур, у фигур свой цвет)
+                    // Тинт (цвет картинки)
                     if (!d.isText && d.placement !== 'volume') {
                         html += `<div class="control-group" style="margin-top:12px; border-bottom:1px solid #eee; padding-bottom:12px;">
-                                    <label class="control-label" style="display:flex; justify-content:space-between;">
-                                        <span>🎨 Тональность (Фильтр)</span>
-                                        <span style="font-weight:normal; color:#888; font-size:10px;">Белый = Оригинал</span>
-                                    </label>
+                                    <label class="control-label">🎨 Тональность (Фильтр)</label>
                                     <div style="display:flex; gap:10px; align-items:center;">
-                                        <input type="color" value="${d.tintColor || '#ffffff'}" 
-                                               style="height:40px; width:60px; border:none; padding:0; background:none;" 
-                                               oninput="updateDecorTint(this.value)">
-                                               
-                                        <button class="btn-sec" onclick="updateDecorTint('#ffffff')" style="padding:8px 12px; font-size:12px;">
-                                            Сбросить (Белый)
-                                        </button>
+                                        <input type="color" value="${d.tintColor || '#ffffff'}" style="height:40px; width:60px; border:none; padding:0;" oninput="updateDecorTint(this.value)">
+                                        <button class="btn-sec" onclick="updateDecorTint('#ffffff')" style="padding:8px 12px; font-size:12px;">Сброс</button>
                                     </div>
                                  </div>`;
                     }
+                    
                     // Текст
                     if (d.isText) {
                         html += `<div style="margin-bottom:16px; border-bottom:1px solid #ddd; padding-bottom:12px;">
-                                    <div class="control-label" style="color:#ec4899">🅰 Текст и Шрифт</div>
+                                    <div class="control-label" style="color:#ec4899">🅰 Текст</div>
                                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px">
-                                        <input type="color" value="${d.color || '#000000'}" style="height:30px; width:40px; border:none; padding:0; background:none" oninput="updateDecorTextProp('color', this.value)">
-                                        <span style="font-size:12px">Цвет текста</span>
+                                        <input type="color" value="${d.color || '#000000'}" style="height:30px; width:40px; border:none; padding:0;" oninput="updateDecorTextProp('color', this.value)">
+                                        <span style="font-size:12px">Цвет</span>
                                     </div>
-                                    <select class="btn-sec" style="width:100%; margin-bottom:8px; font-size:16px" onchange="updateDecorTextProp('font', this.value)">
+                                    <select class="btn-sec" style="width:100%; margin-bottom:8px;" onchange="updateDecorTextProp('font', this.value)">
                                         ${GFONTS.map(f => `<option value='${f.f}' style='font-family:${f.f}' ${d.font===f.f?'selected':''}>${f.n}</option>`).join('')}
                                     </select>
-                                    <input type="text" class="btn-sec" style="width:100%" placeholder="Или свой шрифт..." onchange="updateDecorTextProp('fontCustom', this.value)">
-                                    <button class="btn-sec" style="margin-top:8px; border:1px dashed #ec4899; color:#ec4899; width:100%" onclick="autoSizeDecor()">
-                                        ✨ Исправить пропорции (Авто-размер)
-                                    </button>
+                                    <button class="btn-sec" style="margin-top:8px; border:1px dashed #ec4899; color:#ec4899; width:100%" onclick="autoSizeDecor()">✨ Авто-размер</button>
                                  </div>`;
                     }
 
                     // Цвет 3D
                     if (d.placement === 'volume') {
                         html += `<div style="margin-bottom:16px; border-bottom:1px solid #ddd; padding-bottom:12px;">
-                                    <div class="control-label" style="color:#ec4899">🎨 Цвет фигуры</div>
-                                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px">
-                                        <input type="color" value="${d.color || '#ffffff'}" style="height:40px; width:100%; border:none; border-radius:8px; cursor:pointer;" oninput="updateVolumeColor(this.value)">
-                                    </div>
-                                    <div class="palette" style="margin-top:8px">
-                                        ${['#ffffff','#ff0000','#ffeb3b','#4caf50','#2196f3','#9c27b0','#795548','#000000'].map(c => `<div class="swatch" style="background:${c}; width:30px; height:30px;" onclick="updateVolumeColor('${c}')"></div>`).join('')}
-                                    </div>
+                                    <div class="control-label">🎨 Цвет фигуры</div>
+                                    <input type="color" value="${d.color || '#ffffff'}" style="height:40px; width:100%; border:none;" oninput="updateVolumeColor(this.value)">
                                  </div>`;
                     }
 
                     // Выравнивание
                     if (d.placement === 'volume' || d.placement === 'topper') {
-                        html += `<div class="control-label" style="margin-top:10px; color:#ec4899">🎯 Выравнивание</div>
+                        html += `<div class="control-label">Выравнивание</div>
                                  <div class="btn-grid" style="grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:16px">
-                                    <button class="btn-sec" onclick="alignDecor('centerX')">Центр X (↔)</button>
-                                    <button class="btn-sec" onclick="alignDecor('centerZ')">Центр Z (↕)</button>
-                                    <button class="btn-sec" onclick="alignDecor('straight')" style="grid-column: span 2; color:#ec4899; border-color:#ec4899">Выпрямить всё (●)</button>
+                                    <button class="btn-sec" onclick="alignDecor('centerX')">Центр X</button>
+                                    <button class="btn-sec" onclick="alignDecor('centerZ')">Центр Z</button>
+                                    <button class="btn-sec" onclick="alignDecor('straight')" style="grid-column: span 2;">Выпрямить (Rot=0)</button>
                                  </div>`;
                     }
 
-                    // Джойстик и кнопки
-                    html += `<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:4px; margin-bottom:12px; text-align:center;">
-                                <div></div> ${btn('▲', 'up')} <div></div>
-                                ${btn('◀', 'left')} <div style="display:flex;align-items:center;justify-content:center;font-size:10px;color:#999">MOVE</div> ${btn('▶', 'right')}
-                                <div></div> ${btn('▼', 'down')} <div></div>
+                    // Джойстик (одиночный)
+                    html += `<div style="display:grid; grid-template-columns: 40px 40px 40px; justify-content:center; gap:4px; margin-bottom:12px;">
+                                <div></div> ${miniBtn('▲', 'up')} <div></div>
+                                ${miniBtn('◀', 'left')} <div style="font-size:9px;display:flex;align-items:center;justify-content:center;">MOVE</div> ${miniBtn('▶', 'right')}
+                                <div></div> ${miniBtn('▼', 'down')} <div></div>
                              </div>
                              <div class="btn-grid" style="margin-bottom:16px">
-                                ${btn('↘ Вглубь', 'in')} ${btn('↖ Наружу', 'out')}
-                             </div>
-                             <div class="control-label">Действия</div>
-                             <div class="btn-grid" style="grid-template-columns: 1fr 1fr; margin-bottom:16px">
-                                <button class="btn-sec" onclick="duplicateDecor()">📑 Копия</button>
-                                <button class="btn-sec" onclick="copyDecorToOther()">➡ В Торт ${activeCakeId===0?'B':'A'}</button>
+                                ${miniBtn('↘', 'in')} ${miniBtn('↖', 'out')}
                              </div>`;
 
-                             // ... (после кнопок Копия и В Торт ...)
+                    // Симметрия
+                    html += `<div class="control-label">❄️ Симметрия</div>
+                             <div class="btn-grid" style="grid-template-columns: repeat(4, 1fr); gap:6px; margin-bottom:16px">
+                                <button class="btn-sec" onclick="makeSymmetry(2)">x2</button>
+                                <button class="btn-sec" onclick="makeSymmetry(4)">x4</button>
+                                <button class="btn-sec" onclick="makeSymmetry(6)">x6</button>
+                                <button class="btn-sec" onclick="makeSymmetry(8)">x8</button>
+                             </div>`;
 
-// --- НОВЫЙ БЛОК: СИММЕТРИЯ ---
-html += `<div class="control-label" style="margin-top:16px">❄️ Радиальная симметрия</div>
-         <div class="btn-grid" style="grid-template-columns: repeat(4, 1fr); gap:6px; margin-bottom:16px">
-            <button class="btn-sec" onclick="makeSymmetry(2)">x2</button>
-            <button class="btn-sec" onclick="makeSymmetry(4)">x4</button>
-            <button class="btn-sec" onclick="makeSymmetry(6)">x6</button>
-            <button class="btn-sec" onclick="makeSymmetry(8)">x8</button>
-         </div>`;
-
-// ... (дальше идет control-label Размеры) ...
-
-                    // Размеры и Вращение
+                    // Размеры (СЕТКА)
                     html += `<div class="control-label">Размеры (мм)</div>
-                             <div style="margin-bottom:8px; background:#fff; padding:8px; border-radius:8px; border:1px solid #ddd; display:flex; align-items:center;">
-                                <input type="checkbox" id="lock-aspect" ${ui.lockAspect ? 'checked' : ''} onchange="toggleAspect(this.checked)" style="width:18px; height:18px; accent-color:#ec4899">
-                                <label for="lock-aspect" style="margin-left:8px; font-weight:600; font-size:12px;">🔗 Сохранять пропорции</label>
+                             <div style="margin-bottom:8px; background:#fff; padding:4px; border-radius:8px; border:1px solid #ddd; display:flex; align-items:center;">
+                                <input type="checkbox" id="lock-aspect" ${ui.lockAspect ? 'checked' : ''} onchange="toggleAspect(this.checked)" style="width:16px; height:16px; accent-color:#ec4899">
+                                <label for="lock-aspect" style="margin-left:8px; font-weight:600; font-size:11px;">Сохранять пропорции</label>
                              </div>
-                             <div style="margin-bottom:8px">
-                                <div style="font-size:11px; color:#666; margin-bottom:4px">↔ Ширина</div>
-                                <div class="stepper"><button onclick="stepDecorDim('w', -2)">-</button><input type="number" value="${d.w}" oninput="updateDecorDim('w', this.value)"><button onclick="stepDecorDim('w', 2)">+</button></div>
-                             </div>
-                             <div style="margin-bottom:16px">
-                                <div style="font-size:11px; color:#666; margin-bottom:4px">↕ Высота</div>
-                                <div class="stepper"><button onclick="stepDecorDim('h', -2)">-</button><input type="number" value="${d.h}" oninput="updateDecorDim('h', this.value)"><button onclick="stepDecorDim('h', 2)">+</button></div>
-                             </div>
-                             <div class="control-label">Вращение (${d.rot||0}°)</div>
+                             <div class="control-grid-2">
+                                ${mkStepper('↔ Ширина', d.w, "updateDecorDim('w', this.value)", "stepDecorDim('w', -2)", "stepDecorDim('w', 2)")}
+                                ${mkStepper('↕ Высота', d.h, "updateDecorDim('h', this.value)", "stepDecorDim('h', -2)", "stepDecorDim('h', 2)")}
+                             </div>`;
+                             
+                    // Вращение
+                    html += `<div class="control-label">Вращение (${d.rot||0}°)</div>
                              <div style="display:flex; align-items:center; gap:4px; margin-bottom:12px">
                                 <button class="btn-sec" onclick="stepDecorDim('rot', -45)" style="width:40px">-45</button>
                                 <input type="range" min="-180" max="180" value="${d.rot||0}" step="1" style="flex:1" oninput="updateDecorDim('rot', this.value)">
-                                <button class="btn-sec" style="color:#ec4899; font-weight:bold; padding:0 10px;" onclick="updateDecorDim('rot', 0)">●</button>
                                 <button class="btn-sec" onclick="stepDecorDim('rot', 45)" style="width:40px">+45</button>
                              </div>`;
 
-                    // Наклоны (для 3D)
+                    // 3D Наклоны
                     if (d.placement === 'volume' || d.placement === 'topper') {
-                        html += `<div class="control-label" style="margin-top:12px">Наклон вперёд/назад (${d.rotX || 0}°)</div>
-                                 <div style="display:flex; align-items:center; gap:4px; margin-bottom:8px">
-                                    <button class="btn-sec" onclick="stepVolumeRot('rotX', -45)" style="width:40px">-45</button>
-                                    <input type="range" min="-180" max="180" value="${d.rotX || 0}" step="1" style="flex:1" oninput="updateVolumeRot('rotX', this.value)">
-                                    <button class="btn-sec" style="color:#ec4899; font-weight:bold; padding:0 10px;" onclick="updateVolumeRotX(0)">●</button>
-                                    <button class="btn-sec" onclick="stepVolumeRot('rotX', 45)" style="width:40px">+45</button>
-                                 </div>
-                                 <div class="control-label">Наклон влево/вправо (${d.rotZ || 0}°)</div>
-                                 <div style="display:flex; align-items:center; gap:4px; margin-bottom:16px">
-                                    <button class="btn-sec" onclick="stepVolumeRot('rotZ', -45)" style="width:40px">-45</button>
-                                    <input type="range" min="-180" max="180" value="${d.rotZ || 0}" step="1" style="flex:1" oninput="updateVolumeRot('rotZ', this.value)">
-                                    <button class="btn-sec" style="color:#ec4899; font-weight:bold; padding:0 10px;" onclick="updateVolumeRot('rotZ', 0)">●</button>
-                                    <button class="btn-sec" onclick="stepVolumeRot('rotZ', 45)" style="width:40px">+45</button>
+                        html += `<div class="control-grid-2">
+                                    <div class="control-group"><label class="control-label">Наклон X</label><input type="range" min="-180" max="180" value="${d.rotX || 0}" oninput="updateVolumeRot('rotX', this.value)" style="width:100%"></div>
+                                    <div class="control-group"><label class="control-label">Наклон Z</label><input type="range" min="-180" max="180" value="${d.rotZ || 0}" oninput="updateVolumeRot('rotZ', this.value)" style="width:100%"></div>
                                  </div>`;
                     }
 
+                    // Действия
+                    html += `<div class="control-label">Действия</div>
+                             <div class="btn-grid" style="grid-template-columns: 1fr 1fr; margin-bottom:16px">
+                                <button class="btn-sec" onclick="duplicateDecor()">📑 Копия</button>
+                                <button class="btn-sec" onclick="copyDecorToOther()">➡ В другой торт</button>
+                             </div>`;
+                             
                     html += `</div>`; // Закрываем блок редактирования
                 }
             }
-          }  
-        } else if (menuName === 'scene') {
-    title.innerHTML = '📷 Вид и Камера';
-    
-    // --- НОВЫЙ БЛОК: РАССТОЯНИЕ ---
-    // Показываем его только если включен режим A+B (viewMode === 'both')
-    if (viewMode === 'both') {
-        html += `<div class="control-label">↔ Расстояние между тортами</div>
-                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; background:#fff; padding:10px; border-radius:10px; border:1px solid #ddd">
-                    <span style="font-size:12px; font-weight:bold; color:#666">Близко</span>
-                    <input type="range" min="150" max="600" step="10" value="${cakeGap}" 
-                           style="flex:1; accent-color:#ec4899; height:20px"
-                           oninput="updateCakeGap(this.value)">
-                    <span style="font-size:12px; font-weight:bold; color:#666">Далеко</span>
+        }
+
+    // --- МЕНЮ: ВИД ---
+    } else if (menuName === 'scene') {
+        title.innerHTML = '📷 Вид';
+        
+        if (viewMode === 'both') {
+            html += `<div class="control-label">↔ Расстояние между тортами</div>
+                     <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px; background:#fff; padding:10px; border-radius:10px; border:1px solid #ddd">
+                        <span style="font-size:12px; font-weight:bold; color:#666">Близко</span>
+                        <input type="range" min="150" max="600" step="10" value="${cakeGap}" style="flex:1; accent-color:#ec4899; height:20px" oninput="updateCakeGap(this.value)">
+                        <span style="font-size:12px; font-weight:bold; color:#666">Далеко</span>
+                     </div>`;
+        }
+
+        html += `<div class="control-label">Ракурс</div>
+                 <div class="btn-grid" style="grid-template-columns: 1fr 1fr 1fr 1fr; margin-bottom:16px">
+                    <button class="btn-sec" onclick="setCamView('front')">F</button>
+                    <button class="btn-sec" onclick="setCamView('left')">L</button>
+                    <button class="btn-sec" onclick="setCamView('right')">R</button>
+                    <button class="btn-sec" onclick="setCamView('top')">T</button>
+                 </div>
+                 <button class="btn-sec" onclick="setCamView('reset')" style="width:100%; margin-bottom:16px">🔄 Сброс (ISO)</button>
+                 <button class="btn-full" onclick="takeScreenshot()">📸 Сохранить Скриншот</button>`;
+
+    // --- МЕНЮ: ПРОЕКТ ---
+    } else if (menuName === 'project') {
+        title.innerHTML = '💾 Файл и AR';
+        const dateStr = new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}).replace(':','-');
+        const defaultName = `Cake_${dateStr}`;
+
+        html += `<div class="control-label">Новый проект</div>
+                 <button class="btn-sec" onclick="resetProject()" style="width:100%; color:red; border-color:red; margin-bottom:20px">🗑 Сбросить всё</button>
+
+                 <div class="control-label">Сохранение</div>
+                 <button class="btn-full" onclick="saveProject()">Скачать файл проекта</button>
+                 <button class="btn-sec" onclick="loadProject()" style="margin-top:8px; width:100%">Загрузить проект</button>
+                 
+                 <hr style="border:0; border-top:1px solid #eee; margin:20px 0">
+                 
+                 <div class="control-label" style="color:#4f46e5">📱 Экспорт в AR (3D)</div>
+                 <div style="margin-bottom:12px">
+                    <label style="font-size:11px; color:#666; display:block; margin-bottom:4px">Имя файла</label>
+                    <input type="text" id="export-name" value="${defaultName}" class="btn-sec" style="width:100%; border:1px solid #4f46e5; color:#333">
+                 </div>
+                 <div class="btn-grid">
+                    <button class="btn-sec" style="border:1px solid #4f46e5; color:#4f46e5" onclick="exportAR('usdz')">🍏 iPhone (.usdz)</button>
+                    <button class="btn-sec" style="border:1px solid #4f46e5; color:#4f46e5" onclick="exportAR('glb')">🤖 Android (.glb)</button>
                  </div>`;
     }
 
-    html += `<div class="control-label">Ракурс</div>
-             <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; margin-bottom:16px">
-                <button class="btn-sec" onclick="setCamView('front')" style="padding:10px 0; text-align:center">F</button>
-                <button class="btn-sec" onclick="setCamView('left')" style="padding:10px 0; text-align:center">L</button>
-                <button class="btn-sec" onclick="setCamView('right')" style="padding:10px 0; text-align:center">R</button>
-                <button class="btn-sec" onclick="setCamView('top')" style="padding:10px 0; text-align:center">T</button>
-             </div>
-             <button class="btn-sec" onclick="setCamView('reset')" style="width:100%; margin-bottom:16px">🔄 Сброс (ISO)</button>
-             <hr style="border:0; border-top:1px solid #eee; margin-bottom:16px">
-             <button class="btn-full" onclick="takeScreenshot()">📸 Сохранить Скриншот</button>`;
-}
-  
- else if (menuName === 'project') {
-        title.innerHTML = '💾 Файл и AR';
-        
-        // Генерируем текущее имя
-        const dateStr = new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}).replace(':','-');
-        const modeSuffix = (viewMode === 'both') ? 'Comparison' : (activeCakeId === 0 ? 'Cake_A' : 'Cake_B');
-        const defaultName = `${modeSuffix}_${dateStr}`;
-
-        html += `
-            <div class="control-label">Новый проект</div>
-            <button class="btn-sec" onclick="resetProject()" style="width:100%; color:red; border-color:red; margin-bottom:20px">
-                🗑 Сбросить всё в ноль
-            </button>
-
-            <div class="control-label">Сохранение проекта (JSON)</div>
-            <button class="btn-full" onclick="saveProject()">Скачать файл проекта</button>
-            <button class="btn-sec" onclick="loadProject()" style="margin-top:8px">Загрузить проект</button>
-            
-            <hr style="border:0; border-top:1px solid #eee; margin:20px 0">
-            
-            <div class="control-label" style="color:#4f46e5">📱 Экспорт в AR (3D)</div>
-            
-            <div style="margin-bottom:12px">
-                <label style="font-size:11px; color:#666; display:block; margin-bottom:4px">Имя файла</label>
-                <input type="text" id="export-name" value="${defaultName}" 
-                       class="btn-sec" style="width:100%; border:1px solid #4f46e5; color:#333">
-            </div>
-
-            <div class="btn-grid">
-                <button class="btn-sec" style="border:1px solid #4f46e5; color:#4f46e5" onclick="exportAR('usdz')">
-                    🍏 iPhone (.usdz)
-                </button>
-                <button class="btn-sec" style="border:1px solid #4f46e5; color:#4f46e5" onclick="exportAR('glb')">
-                    🤖 Android (.glb)
-                </button>
-            </div>
-            <div style="font-size:10px; color:#999; margin-top:8px; text-align:center; line-height:1.4">
-                Выберите формат в зависимости от устройства,<br>на котором будете открывать файл.
-            </div>`;
-    }
-
-    content.innerHTML = html; 
-    sheet.classList.add('open');
-
-    // --- 2. ВОССТАНАВЛИВАЕМ ПОЗИЦИЮ ---
+    content.innerHTML = html;
+    
+    // --- 2. ВОССТАНАВЛИВАЕМ СКРОЛЛ ---
     if (menuName === 'decor') {
         const newList = document.getElementById('decor-list-box');
-        
         if (newList) {
-            // ВАРИАНТ А: Если мы просто обновляем меню (ставим галочки) -> ВОЗВРАЩАЕМ СКРОЛЛ
             if (wasDecorListOpen) {
                 newList.scrollTop = savedScroll;
-            } 
-            // ВАРИАНТ Б: Если меню открылось впервые (кликнули 3D-объект) -> ИДЕМ К ОБЪЕКТУ
-            else {
-                let targetIdx = null;
+            } else {
+                // Если открыли впервые, скроллим к выбранному
                 if (typeof scrollTarget !== 'undefined' && scrollTarget !== null) {
-                    targetIdx = scrollTarget;
+                    const item = document.getElementById(`decor-item-${scrollTarget}`);
+                    if (item) item.scrollIntoView({ block: 'center', behavior: 'auto' });
                 } else if (ui.selDecorIdx !== null) {
-                    targetIdx = ui.selDecorIdx;
-                }
-
-                if (targetIdx !== null) {
-                    const item = document.getElementById(`decor-item-${targetIdx}`);
-                    // 'block: center' лучше, чтобы объект был по центру списка, а не у края
+                    const item = document.getElementById(`decor-item-${ui.selDecorIdx}`);
                     if (item) item.scrollIntoView({ block: 'center', behavior: 'auto' });
                 }
             }
@@ -1486,19 +1599,54 @@ html += `<div class="control-label" style="margin-top:16px">❄️ Радиал�
     }
 }
 /* --- 4. FUNCTIONS --- */
+
+  // Функция для создания горизонтального меню (Чипсов)
+// Функция для создания горизонтального меню (Чипсов) + ВИБРАЦИЯ
+function mkSelector(label, currentVal, options, onSelectStr) {
+    let html = `<div class="control-group">`;
+    if(label) html += `<label class="control-label">${label}</label>`;
+    
+    html += `<div class="chip-scroll">`;
+    
+    options.forEach(opt => {
+        const isActive = (opt.val === currentVal);
+        const safeVal = opt.val.replace(/'/g, "\\'");
+        
+        // ДОБАВИЛИ: vibro('light'); перед вызовом логики
+        html += `<button class="chip-btn ${isActive ? 'active' : ''}" 
+                         onclick="vibro('light'); ${onSelectStr.replace('__VAL__', safeVal)}">
+                    ${opt.icon ? `<span>${opt.icon}</span>` : ''}
+                    <span>${opt.label}</span>
+                 </button>`;
+    });
+    
+    html += `</div></div>`;
+    return html;
+}
+
+                      
+/* --- HAPTIC FEEDBACK --- */
+function vibro(force) {
+    if (navigator.vibrate) {
+        // 'light' = легкий щелчок (10мс)
+        // 'medium' = обычное нажатие (25мс)
+        // иначе = переданное число мс
+        const ms = (force === 'light') ? 10 : ((force === 'medium' || !force) ? 25 : force);
+        navigator.vibrate(ms);
+    }
+}
+  
 function mkStepper(lbl, val, onInp, onDec, onInc) {
-    // ИСПРАВЛЕНИЕ: Экранируем кавычки, чтобы JS код внутри HTML не ломался
-    // Было: startHold('stepProp('d', 10)') -> ОШИБКА
-    // Стало: startHold('stepProp(\'d\', 10)') -> ОК
     const safeDec = onDec.replace(/'/g, "\\'");
     const safeInc = onInc.replace(/'/g, "\\'");
 
+    // ДОБАВИЛИ: vibro('medium') в onpointerdown
     return `<div class="control-group">
               <label class="control-label">${lbl}</label>
               <div class="stepper">
-                <button onpointerdown="startHold('${safeDec}')" onpointerup="stopHold()" onpointerleave="stopHold()">-</button>
+                <button onpointerdown="vibro('medium'); startHold('${safeDec}')" onpointerup="stopHold()" onpointerleave="stopHold()">-</button>
                 <input type="number" value="${val}" oninput="${onInp}">
-                <button onpointerdown="startHold('${safeInc}')" onpointerup="stopHold()" onpointerleave="stopHold()">+</button>
+                <button onpointerdown="vibro('medium'); startHold('${safeInc}')" onpointerup="stopHold()" onpointerleave="stopHold()">+</button>
               </div>
             </div>`;
 }
@@ -1592,7 +1740,7 @@ function stepTex(key, delta) {
     rebuildScene(); recordHistory();
 }
 
-function setTab(t) { ui.colorTab = t; openMenu('color'); }
+function setTab(t) { vibro('light');ui.colorTab = t; openMenu('color'); }
 function setTexPart(p) { ui.activeTexPart = p; openMenu('color'); }
 function compressImage(file, maxSize, callback) {
     const reader = new FileReader(); reader.onload = e => {
@@ -1615,6 +1763,7 @@ function updateTexProp(key, val) {
 }
 
 function switchCake(id) {
+  vibro(30);
     // ... (код переключения viewMode как и был) ...
     if (id === 'both') { 
         viewMode = 'both'; activeCakeId = 0; 
@@ -2024,7 +2173,15 @@ function onPointerMove(e) {
 }
 
 function getActiveTiers() { return cakes[activeCakeId]; }
-function closeSheet() { document.getElementById('bottom-sheet').classList.remove('open'); ui.activeMenu = null; }
+function closeSheet() { 
+    const sh = document.getElementById('bottom-sheet');
+    sh.classList.add('hidden-sheet'); // Прячем вниз
+    sh.classList.remove('open'); 
+    ui.activeMenu = null; 
+    
+    // Сбрасываем высоту на дефолт при следующем открытии (опционально)
+    setTimeout(() => { sh.style.height = '40vh'; }, 300);
+}
 function recordHistory() { if (historyPtr < history.length - 1) history = history.slice(0, historyPtr + 1); history.push(JSON.stringify(cakes)); if (history.length > 30) history.shift(); else historyPtr++; if(viewMode === 'both') renderCompareTable(); }
 function undo() { if (historyPtr > 0) { historyPtr--; cakes = JSON.parse(history[historyPtr]); rebuildScene(); if(ui.activeMenu) openMenu(ui.activeMenu); if(viewMode === 'both') renderCompareTable(); } }
 function redo() { if (historyPtr < history.length - 1) { historyPtr++; cakes = JSON.parse(history[historyPtr]); rebuildScene(); if(ui.activeMenu) openMenu(ui.activeMenu); if(viewMode === 'both') renderCompareTable(); } }
@@ -2456,11 +2613,21 @@ function stepDecorDim(key, delta) {
 if (typeof holdTimer === 'undefined') var holdTimer = null; 
 
 // Эта функция выполняет ЛЮБОЙ код много раз, пока держишь кнопку
+// Эта функция выполняет ЛЮБОЙ код много раз, пока держишь кнопку
 function startHold(code) {
     if(holdTimer) clearInterval(holdTimer);
+    
     const func = new Function(code);
-    func(); // Срабатываем сразу при нажатии
-    holdTimer = setInterval(func, 100); // Повторяем каждые 100мс
+    
+    // 1. Срабатываем сразу при нажатии
+    func(); 
+    vibro('medium'); // Первый "тук" посильнее
+    
+    // 2. Повторяем каждые 100мс (пока держишь)
+    holdTimer = setInterval(() => {
+        func();          // Меняем значение
+        vibro('light');  // Легкий "тук" на каждый шаг (эффект трещотки)
+    }, 100); 
 }
 
 function stopHold() {
@@ -3478,7 +3645,54 @@ function updateCakeGap(val) {
     rebuildScene(); // Перестраиваем сцену с новым отступом
     // Камеру не меняем, чтобы не сбивать настройку, просто двигаем торты
 }
-  
+
+/* --- ИСПРАВЛЕННАЯ ЛОГИКА DRAG (УНИВЕРСАЛЬНАЯ) --- */
+const sheetEl = document.getElementById('bottom-sheet');
+const dragEl = document.getElementById('sheet-drag-handle');
+let dragStartY, dragStartH, isSheetDragging = false;
+
+// Используем pointerdown вместо touchstart (работает и мышь, и палец)
+dragEl.addEventListener('pointerdown', (e) => {
+    // 1. Блокируем всплытие, чтобы не вращалась камера
+    e.stopPropagation(); 
+    
+    isSheetDragging = true;
+    dragStartY = e.clientY; // Координата Y нажатия
+    dragStartH = sheetEl.getBoundingClientRect().height; // Текущая высота
+    
+    sheetEl.style.transition = 'none'; // Отключаем плавность для мгновенного отклика
+    
+    // 2. "Захват" курсора. События будут идти на этот элемент, даже если палец ушел в сторону
+    dragEl.setPointerCapture(e.pointerId);
+});
+
+dragEl.addEventListener('pointermove', (e) => {
+    if (!isSheetDragging) return;
+    
+    // 3. Считаем разницу (тянем вверх = Y уменьшается, значит разница положительная для высоты)
+    const delta = dragStartY - e.clientY; 
+    const newH = dragStartH + delta;
+    
+    // 4. Ограничители высоты (в пикселях)
+    const maxH = window.innerHeight * 0.95; // Не больше 95% экрана
+    const minH = window.innerHeight * 0.15; // Не меньше 15% экрана
+    
+    if(newH > maxH || newH < minH) return;
+    
+    sheetEl.style.height = newH + 'px';
+});
+
+// Завершение перетаскивания
+const stopDrag = (e) => {
+    if (!isSheetDragging) return;
+    isSheetDragging = false;
+    // Возвращаем плавную анимацию
+    sheetEl.style.transition = 'height 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)'; 
+    dragEl.releasePointerCapture(e.pointerId);
+};
+
+dragEl.addEventListener('pointerup', stopDrag);
+dragEl.addEventListener('pointercancel', stopDrag);
 init();
 </script>
   <script>
@@ -3492,3 +3706,14 @@ init();
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
