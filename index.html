@@ -430,6 +430,26 @@ input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--primary); 
       align-items: center; 
       justify-content: center;
   }
+
+  /* Возвращаем видимый скроллбар для ленты кнопок (форм ярусов) на ПК */
+  .chip-scroll {
+      scrollbar-width: thin !important; /* Для Firefox */
+      padding-bottom: 8px !important; /* Даем место под скроллбар, чтобы он не перекрывал кнопки */
+  }
+  
+  .chip-scroll::-webkit-scrollbar {
+      display: block !important; /* Показываем скроллбар (Chrome/Safari) */
+      height: 6px; 
+  }
+  
+  .chip-scroll::-webkit-scrollbar-track {
+      background: transparent;
+  }
+  
+  .chip-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1; /* Приятный серый цвет ползунка */
+      border-radius: 10px;
+  }
 }
   
 /* --- МОБИЛЬНАЯ ОПТИМИЗАЦИЯ (Крупные кнопки снизу) --- */
