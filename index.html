@@ -1138,18 +1138,13 @@ function rebuildScene() {
       }
 
       // INFO LABELS
-      const infoLabel = createInfoSprite(t);
-      const dir = (cIdx === 0) ? -1 : 1;
-      let rMax = t.d/2;
-      if(t.shape==='box') rMax = (t.d * Math.sqrt(2))/2;
-      if(t.shape==='parallelepiped') rMax = Math.max(t.w, t.dep)/2;
-      infoLabel.position.set(dir * (rMax + 160), h/2, 0);
-      tGrp.add(infoLabel);
+     
       
       tGrp.position.y = curY;
       cakeGroup.add(tGrp); 
       curY += h;
     });
+    createSummaryLabel(cakeGroup, cIdx, curY);
     group.add(cakeGroup);
   });
 }
@@ -2249,7 +2244,7 @@ function recordHistory() { if (historyPtr < history.length - 1) history = histor
 function undo() { if (historyPtr > 0) { historyPtr--; cakes = JSON.parse(history[historyPtr]); rebuildScene(); if(ui.activeMenu) openMenu(ui.activeMenu); if(viewMode === 'both') renderCompareTable(); } }
 function redo() { if (historyPtr < history.length - 1) { historyPtr++; cakes = JSON.parse(history[historyPtr]); rebuildScene(); if(ui.activeMenu) openMenu(ui.activeMenu); if(viewMode === 'both') renderCompareTable(); } }
 function moveTier(dir) { if (ui.selTier === null) return; const tiers = getActiveTiers(); const newIdx = ui.selTier + dir; if (newIdx < 0 || newIdx >= tiers.length) return; [tiers[ui.selTier], tiers[newIdx]] = [tiers[newIdx], tiers[ui.selTier]]; ui.selTier = newIdx; rebuildScene(); openMenu('structure_edit'); recordHistory(); }
-function actionAddTier() { getActiveTiers().push({id:Date.now(), shape:'cylinder', d:200, h:100, n:6, w:200, dep:200, color:'#ffffff', weight:2, filling:'Ваниль', decor:[], tex:{side:defaultTex(),top:defaultTex(),bottom:defaultTex()}}); ui.selTier = getActiveTiers().length - 1; rebuildScene(); openMenu('structure_edit'); recordHistory(); }
+function actionAddTier() { getActiveTiers().push({id:Date.now(), shape:'cylinder', d:200, h:100, n:6, w:200, dep:200, color:'#ffffff', weight:2, filling:'', decor:[], tex:{side:defaultTex(),top:defaultTex(),bottom:defaultTex()}}); ui.selTier = getActiveTiers().length - 1; rebuildScene(); openMenu('structure_edit'); recordHistory(); }
 function selectAndEditTier(idx) { ui.selTier = idx; rebuildScene(); openMenu('structure_edit'); }
 function previewTierColor(val) { if(ui.selTier === null) return; const t = getActiveTiers()[ui.selTier]; t.color = val; rebuildScene(); }
 function duplicateTier() { if(ui.selTier!==null){ getActiveTiers().push(JSON.parse(JSON.stringify(getActiveTiers()[ui.selTier]))); ui.selTier=getActiveTiers().length-1; rebuildScene(); openMenu('structure_edit'); recordHistory(); }}
@@ -2760,98 +2755,128 @@ function wrapText(ctx, text, maxWidth) {
     return lines;
 }
 
-/* --- ГЕНЕРАТОР ПЛАШЕК (ВЕРТИКАЛЬНЫЙ ПЕРЕНОС) --- */
-function createInfoSprite(t) {
-    // 1. НАСТРОЙКИ
-    const fixedCanvasW = 500; // Жесткая ширина плашки
-    const paddingX = 40;      // Отступы по бокам
-    const paddingY = 40;      // Отступы сверху и снизу
-    const gap = 20;           // Отступ между блоками текста
-    const maxTextW = fixedCanvasW - (paddingX * 2); // Макс. ширина текста для переноса
+/* --- НОВЫЙ ГЕНЕРАТОР ОБЩЕЙ ПЛАШКИ (СВЕРХУ) --- */
+function createSummaryLabel(targetGroup, cakeIdx, totalHeight) {
+    const tiers = cakes[cakeIdx];
+    if (!tiers || tiers.length === 0) return;
 
-    // Шрифты и их высоты строк (line-height)
-    const titleFont = "bold 56px Inter, sans-serif"; const titleLH = 70;
-    const bodyFont = "48px Inter, sans-serif";       const bodyLH = 60;
-    const infoFont = "italic 44px Inter, sans-serif"; const infoLH = 55;
+    // 1. СБОР ДАННЫХ И УМНАЯ ГЕНЕРАЦИЯ ТЕКСТА
+    let totalWeight = 0;
+    let tierLines = [];
 
-    // Тексты
-    const dimText = (t.shape === 'box') ? `◼ ${t.d/10}x${t.d/10} см` : 
-                    (t.shape === 'parallelepiped' ? `▬ ${t.w/10}x${t.dep/10} см` : `● Ø ${t.d/10} см`);
-    const hText = `↕ Высота: ${t.h/10} см`;
-    let infoText = `${t.weight||0} кг`;
-    if(t.filling) infoText += ` | ${t.filling}`;
+    // Перебираем ярусы в обратном порядке (сверху вниз), чтобы список шел логично
+    [...tiers].reverse().forEach((t, i) => {
+        // Считаем общий вес
+        totalWeight += (t.weight || 0);
 
-    // 2. ПОДГОТОВКА (Разбивка на строки и расчет высоты)
-    const tempCvs = document.createElement('canvas'); const tempCtx = tempCvs.getContext('2d');
+        // Формируем строку размеров
+        let dimStr = '';
+        if (t.shape === 'box') dimStr = `◼ ${t.d / 10}x${t.d / 10}`;
+        else if (t.shape === 'parallelepiped') dimStr = `▬ ${t.w / 10}x${t.dep / 10}`;
+        else dimStr = `● Ø${t.d / 10}`;
 
-    tempCtx.font = titleFont;
-    const titleLines = wrapText(tempCtx, dimText, maxTextW);
-    const titleH = titleLines.length * titleLH;
+        // --- РЕШЕНИЕ ПРОБЛЕМЫ 2 (Высота шара) ---
+        // Добавляем высоту, ТОЛЬКО если это не сфера
+        if (t.shape !== 'sphere') {
+            dimStr += ` | h ${t.h / 10}`;
+        }
 
-    tempCtx.font = bodyFont;
-    const bodyLines = wrapText(tempCtx, hText, maxTextW);
-    const bodyH = bodyLines.length * bodyLH;
+        // --- РЕШЕНИЕ ПРОБЛЕМЫ 3 (Пустые начинки) ---
+        // Добавляем начинку, ТОЛЬКО если она не пустая
+        let fillingStr = '';
+        if (t.filling && t.filling.trim() !== '') {
+            fillingStr = ` (${t.filling})`;
+        }
+        
+        // Собираем строку яруса (Ярус N: Размеры + Начинка)
+        // Используем реальный номер яруса с низу (t.id нельзя использовать, берем индекс из оригинала)
+        const realIndex = tiers.indexOf(t) + 1;
+        tierLines.push(`${realIndex}. ${dimStr}${fillingStr}`);
+    });
 
-    tempCtx.font = infoFont;
-    const infoLines = wrapText(tempCtx, infoText, maxTextW);
-    const infoH = infoLines.length * infoLH;
+    // Формируем итоговый многострочный текст
+    let finalString = `ТОРТ ${cakeIdx === 0 ? 'A' : 'B'}\n`; // Заголовок
+    // Общая информация
+    finalString += `Всего: H ${totalHeight / 10} см`;
+    // --- РЕШЕНИЕ ПРОБЛЕМЫ 3 (Нулевой вес) ---
+    if (totalWeight > 0) {
+        finalString += ` | ⚖️ ${Math.round(totalWeight * 10) / 10} кг`;
+    }
+    finalString += `\n\n`; // Пустая строка для отступа
+    // Список ярусов
+    finalString += tierLines.join('\n');
 
-    // Вычисляем общую высоту канваса
-    const canvasH = paddingY + titleH + gap + bodyH + gap + infoH + paddingY;
 
-    // 3. РИСОВАНИЕ
+    // 2. РИСОВАНИЕ НА CANVAS (Адаптивная высота)
+    const fixedW = 600; // Делаем пошире
+    const padding = 40;
+    const headlineFont = "bold 60px Inter, sans-serif"; const headlineLH = 80;
+    const bodyFont = "48px Inter, sans-serif";          const bodyLH = 65;
+
+    const tempCtx = document.createElement('canvas').getContext('2d');
+    
+    // Разбиваем текст на строки для рисования
+    const rawLines = finalString.split('\n');
+    let drawLines = [];
+    let totalContentH = 0;
+
+    // Проходимся по строкам и считаем высоту
+    rawLines.forEach((line, i) => {
+        const isHeadline = (i === 0); // Первая строка - заголовок
+        tempCtx.font = isHeadline ? headlineFont : bodyFont;
+        const lh = isHeadline ? headlineLH : bodyLH;
+        // Используем функцию wrapText (она у вас уже есть в коде выше) для переноса длинных строк
+        const wrapped = wrapText(tempCtx, line, fixedW - padding * 2);
+        drawLines.push({ lines: wrapped, font: tempCtx.font, lh: lh });
+        totalContentH += wrapped.length * lh;
+    });
+
+    // Вычисляем итоговую высоту канваса
+    const canvasH = totalContentH + padding * 2;
+
     const cvs = document.createElement('canvas');
-    cvs.width = fixedCanvasW; 
+    cvs.width = fixedW;
     cvs.height = canvasH;
     const ctx = cvs.getContext('2d');
 
-    // Фон и рамка
-    ctx.fillStyle = "#ffffff"; ctx.beginPath(); 
-    ctx.roundRect(10, 10, fixedCanvasW-20, canvasH-20, 40); ctx.fill();
-    ctx.strokeStyle = "#ec4899"; ctx.lineWidth = 8; ctx.stroke();
+    // Фон (Белый полупрозрачный, с розовой рамкой)
+    ctx.fillStyle = "rgba(255, 255, 255, 0.95)"; 
+    ctx.beginPath();
+    ctx.roundRect(5, 5, fixedW - 10, canvasH - 10, 30);
+    ctx.fill();
+    ctx.strokeStyle = "#ec4899"; ctx.lineWidth = 10; ctx.stroke();
 
-    // Текст
-    ctx.fillStyle = "#333"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    let currentY = paddingY; // Стартовая позиция Y
-
-    // Блок 1: Заголовок
-    ctx.font = titleFont;
-    titleLines.forEach((line, i) => {
-        ctx.fillText(line, paddingX, currentY + (i * titleLH) + titleLH/2);
-    });
-    currentY += titleH + gap;
-
-    // Блок 2: Высота
-    ctx.font = bodyFont;
-    bodyLines.forEach((line, i) => {
-        ctx.fillText(line, paddingX, currentY + (i * bodyLH) + bodyLH/2);
-    });
-    currentY += bodyH + gap;
-
-    // Блок 3: Инфо
-    ctx.fillStyle = "#666"; ctx.font = infoFont;
-    infoLines.forEach((line, i) => {
-        ctx.fillText(line, paddingX, currentY + (i * infoLH) + infoLH/2);
+    // Рисуем текст
+    ctx.fillStyle = "#333"; ctx.textAlign = "left"; ctx.textBaseline = "top";
+    let curY = padding;
+    drawLines.forEach(block => {
+        ctx.font = block.font;
+        block.lines.forEach(l => {
+            ctx.fillText(l, padding, curY);
+            curY += block.lh;
+        });
     });
 
-    // 4. СОЗДАНИЕ СПРАЙТА
+    // 3. СОЗДАНИЕ СПРАЙТА
     const tex = new THREE.CanvasTexture(cvs);
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    
-    // ВЕРНУЛИ ОБЫЧНЫЙ МАТЕРИАЛ (Убрали depthTest: false)
-    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true }); 
+    // depthTest: false гарантирует, что плашка всегда будет поверх торта
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
     const sprite = new THREE.Sprite(mat);
+
+    // Масштаб в 3D мире (подбираем визуально, чтобы было читаемо)
+    const scaleFactor = 0.4; 
+    sprite.scale.set(fixedW * scaleFactor, canvasH * scaleFactor, 1);
+
+    // --- РЕШЕНИЕ ПРОБЛЕМЫ 1 и 4 (Позиция сверху) ---
+    // Ставим по центру (X=0, Z=0) и над тортом (totalHeight + отступ)
+    sprite.position.set(0, totalHeight + 100, 0);
     
-    // ТЕПЕРЬ ФИКСИРУЕМ ШИРИНУ В 3D
-    const worldScaleW = 150; 
-    const worldScaleH = worldScaleW * (canvasH / fixedCanvasW); 
-    
-    sprite.scale.set(worldScaleW, worldScaleH, 1);
-    
-    // Убрали renderOrder = 999, он больше не нужен
-    sprite.visible = false; 
+    // Важно: userData чтобы скрывать при обычном просмотре и показывать при скриншоте
     sprite.userData = { type: 'infoLabel' }; 
-    return sprite;
+    sprite.visible = false; // По умолчанию скрыта
+
+    targetGroup.add(sprite);
 }
 /* --- НОВЫЕ ФУНКЦИИ: МАТЕРИАЛЫ И ПОДТЕКИ --- */
 
