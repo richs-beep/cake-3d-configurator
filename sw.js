@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cake-3d-v5.4';
+const CACHE_NAME = 'cake-3d-v5.5';
 const ASSETS = [
   './',
   './index.html',
