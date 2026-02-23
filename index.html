@@ -2756,97 +2756,69 @@ function wrapText(ctx, text, maxWidth) {
 }
 
 /* --- НОВЫЙ ГЕНЕРАТОР ОБЩЕЙ ПЛАШКИ (СВЕРХУ) --- */
+/* --- НОВЫЙ ГЕНЕРАТОР ОБЩЕЙ ПЛАШКИ (СВЕРХУ) - v2 (Исправлено позиционирование и размер) --- */
 function createSummaryLabel(targetGroup, cakeIdx, totalHeight) {
     const tiers = cakes[cakeIdx];
     if (!tiers || tiers.length === 0) return;
 
-    // 1. СБОР ДАННЫХ И УМНАЯ ГЕНЕРАЦИЯ ТЕКСТА
+    // 1. СБОР ДАННЫХ
     let totalWeight = 0;
     let tierLines = [];
 
-    // Перебираем ярусы в обратном порядке (сверху вниз), чтобы список шел логично
     [...tiers].reverse().forEach((t, i) => {
-        // Считаем общий вес
         totalWeight += (t.weight || 0);
-
-        // Формируем строку размеров
         let dimStr = '';
         if (t.shape === 'box') dimStr = `◼ ${t.d / 10}x${t.d / 10}`;
         else if (t.shape === 'parallelepiped') dimStr = `▬ ${t.w / 10}x${t.dep / 10}`;
         else dimStr = `● Ø${t.d / 10}`;
 
-        // --- РЕШЕНИЕ ПРОБЛЕМЫ 2 (Высота шара) ---
-        // Добавляем высоту, ТОЛЬКО если это не сфера
-        if (t.shape !== 'sphere') {
-            dimStr += ` | h ${t.h / 10}`;
-        }
-
-        // --- РЕШЕНИЕ ПРОБЛЕМЫ 3 (Пустые начинки) ---
-        // Добавляем начинку, ТОЛЬКО если она не пустая
-        let fillingStr = '';
-        if (t.filling && t.filling.trim() !== '') {
-            fillingStr = ` (${t.filling})`;
-        }
+        if (t.shape !== 'sphere') dimStr += ` | h ${t.h / 10}`;
         
-        // Собираем строку яруса (Ярус N: Размеры + Начинка)
-        // Используем реальный номер яруса с низу (t.id нельзя использовать, берем индекс из оригинала)
+        let fillingStr = '';
+        if (t.filling && t.filling.trim() !== '') fillingStr = ` (${t.filling})`;
+        
         const realIndex = tiers.indexOf(t) + 1;
         tierLines.push(`${realIndex}. ${dimStr}${fillingStr}`);
     });
 
-    // Формируем итоговый многострочный текст
-    let finalString = `ТОРТ ${cakeIdx === 0 ? 'A' : 'B'}\n`; // Заголовок
-    // Общая информация
+    let finalString = `ТОРТ ${cakeIdx === 0 ? 'A' : 'B'}\n`;
     finalString += `Всего: H ${totalHeight / 10} см`;
-    // --- РЕШЕНИЕ ПРОБЛЕМЫ 3 (Нулевой вес) ---
-    if (totalWeight > 0) {
-        finalString += ` | ⚖️ ${Math.round(totalWeight * 10) / 10} кг`;
-    }
-    finalString += `\n\n`; // Пустая строка для отступа
-    // Список ярусов
+    if (totalWeight > 0) finalString += ` | ⚖️ ${Math.round(totalWeight * 10) / 10} кг`;
+    finalString += `\n\n`;
     finalString += tierLines.join('\n');
 
 
-    // 2. РИСОВАНИЕ НА CANVAS (Адаптивная высота)
-    const fixedW = 600; // Делаем пошире
+    // 2. РИСОВАНИЕ НА CANVAS
+    const fixedW = 600;
     const padding = 40;
+    // Шрифты оставляем большими для четкости
     const headlineFont = "bold 60px Inter, sans-serif"; const headlineLH = 80;
     const bodyFont = "48px Inter, sans-serif";          const bodyLH = 65;
 
     const tempCtx = document.createElement('canvas').getContext('2d');
-    
-    // Разбиваем текст на строки для рисования
     const rawLines = finalString.split('\n');
     let drawLines = [];
     let totalContentH = 0;
 
-    // Проходимся по строкам и считаем высоту
     rawLines.forEach((line, i) => {
-        const isHeadline = (i === 0); // Первая строка - заголовок
+        const isHeadline = (i === 0);
         tempCtx.font = isHeadline ? headlineFont : bodyFont;
         const lh = isHeadline ? headlineLH : bodyLH;
-        // Используем функцию wrapText (она у вас уже есть в коде выше) для переноса длинных строк
         const wrapped = wrapText(tempCtx, line, fixedW - padding * 2);
         drawLines.push({ lines: wrapped, font: tempCtx.font, lh: lh });
         totalContentH += wrapped.length * lh;
     });
 
-    // Вычисляем итоговую высоту канваса
     const canvasH = totalContentH + padding * 2;
-
     const cvs = document.createElement('canvas');
     cvs.width = fixedW;
     cvs.height = canvasH;
     const ctx = cvs.getContext('2d');
 
-    // Фон (Белый полупрозрачный, с розовой рамкой)
     ctx.fillStyle = "rgba(255, 255, 255, 0.95)"; 
-    ctx.beginPath();
-    ctx.roundRect(5, 5, fixedW - 10, canvasH - 10, 30);
-    ctx.fill();
+    ctx.beginPath(); ctx.roundRect(5, 5, fixedW - 10, canvasH - 10, 30); ctx.fill();
     ctx.strokeStyle = "#ec4899"; ctx.lineWidth = 10; ctx.stroke();
 
-    // Рисуем текст
     ctx.fillStyle = "#333"; ctx.textAlign = "left"; ctx.textBaseline = "top";
     let curY = padding;
     drawLines.forEach(block => {
@@ -2857,25 +2829,32 @@ function createSummaryLabel(targetGroup, cakeIdx, totalHeight) {
         });
     });
 
-    // 3. СОЗДАНИЕ СПРАЙТА
+    // 3. СОЗДАНИЕ СПРАЙТА И ПОЗИЦИОНИРОВАНИЕ
     const tex = new THREE.CanvasTexture(cvs);
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    // depthTest: false гарантирует, что плашка всегда будет поверх торта
     const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
     const sprite = new THREE.Sprite(mat);
 
-    // Масштаб в 3D мире (подбираем визуально, чтобы было читаемо)
-    const scaleFactor = 0.4; 
+    // --- ИСПРАВЛЕНИЕ 1: Уменьшаем размер текста в 2 раза ---
+    // Было 0.4, теперь 0.2. Плашка станет в 2 раза меньше в 3D мире.
+    const scaleFactor = 0.2; 
     sprite.scale.set(fixedW * scaleFactor, canvasH * scaleFactor, 1);
 
-    // --- РЕШЕНИЕ ПРОБЛЕМЫ 1 и 4 (Позиция сверху) ---
-    // Ставим по центру (X=0, Z=0) и над тортом (totalHeight + отступ)
-    sprite.position.set(0, totalHeight + 100, 0);
+    // --- ИСПРАВЛЕНИЕ 2: Точное позиционирование над тортом ---
+    // Отступ 0.5 см = 50 единиц.
+    const gap = 50;
     
-    // Важно: userData чтобы скрывать при обычном просмотре и показывать при скриншоте
-    sprite.userData = { type: 'infoLabel' }; 
-    sprite.visible = false; // По умолчанию скрыта
+    // Спрайт центрируется по своей середине.
+    // Нам нужно знать половину его реальной высоты в 3D мире.
+    const spriteHalfHeightIn3D = (canvasH * scaleFactor) / 2;
 
+    // Координата Y = (Верх торта) + (Отступ 0.5см) + (Половина высоты плашки, чтобы поднять её центр)
+    const finalY = totalHeight + gap + spriteHalfHeightIn3D;
+
+    sprite.position.set(0, finalY, 0);
+    
+    sprite.userData = { type: 'infoLabel' }; 
+    sprite.visible = false;
     targetGroup.add(sprite);
 }
 /* --- НОВЫЕ ФУНКЦИИ: МАТЕРИАЛЫ И ПОДТЕКИ --- */
